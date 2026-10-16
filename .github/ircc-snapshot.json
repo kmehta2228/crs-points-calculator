@@ -1,0 +1,14 @@
+{
+  "CRS criteria": {
+    "url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/check-score/crs-criteria.html",
+    "sha256": "f9698bcc46fa299f978f96cc481947ff258e00507bcfe08007d561f099cca79d"
+  },
+  "High-wage occupations list": {
+    "url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/check-score/high-wage.html",
+    "sha256": "b58e39a28ad66bd5a350d033a241852c9014db40986a707e5d9467906bbfab23"
+  },
+  "2026 changes to CRS points": {
+    "url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/changes.html",
+    "sha256": "dea79227bb5fdca1be1614825a392724ab30321a8f84c90b9f609d503f860a02"
+  }
+}
