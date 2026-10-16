@@ -221,6 +221,189 @@ table.bd{width:100%;border-collapse:collapse;font-size:14.5px}
 }
 @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
 </style>
+<style>
+/* Next draw prediction: filled from data/draws.json. Charts use one hue (the accent) plus --viz-soft, its de-emphasised step (both >= 3:1 on the light and dark surfaces) */
+:root{--viz-soft:#8986CA;--band-a:.12;--rbar-a:.24;--key-a:.25}
+/* the range band and bar need more opacity to read on the dark surface */
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){--viz-soft:#68679D;--band-a:.22;--rbar-a:.4;--key-a:.4}
+}
+:root[data-theme="dark"]{--viz-soft:#68679D;--band-a:.22;--rbar-a:.4;--key-a:.4}
+#f{scroll-margin-top:calc(76px + env(safe-area-inset-top,0px))}
+
+.predict{display:grid;gap:18px;margin-top:44px;padding-top:30px;border-top:1px solid var(--rule);min-width:0;scroll-margin-top:calc(76px + env(safe-area-inset-top,0px))}
+.pr-head{display:grid;gap:10px}
+.predict h2{font-family:var(--f-display);font-weight:700;font-size:clamp(28px,6.4vw,38px);line-height:1.04;letter-spacing:-.015em;margin:0;text-wrap:balance}
+.pr-lede{margin:0;color:var(--muted);max-width:64ch}
+.predict .disclaimer{margin:0}
+.pr-fresh{margin:0;font-size:14px;color:var(--muted)}
+.pr-fresh b{color:var(--ink)}
+.predict .banner{margin:0}
+.predict .banner span{flex:1 1 auto}
+
+.pr-controls{display:flex;flex-wrap:wrap;align-items:flex-start;gap:16px 28px;background:var(--surface);border:1px solid var(--rule);border-radius:16px;box-shadow:var(--shadow);padding:16px}
+.pr-controls .field{flex:1 1 240px}
+.pr-controls .pr-f-rules{flex:0 1 380px}
+.pr-controls .pr-f-n{flex:2 1 300px}
+.pr-seg{width:min(100%,380px)}
+.pr-seg label{padding:9px 10px;line-height:1.25;font-size:15px}
+.pr-n-row{display:flex;align-items:center;gap:12px;min-width:0}
+.pr-slider{position:relative;flex:1 1 auto;min-width:0}
+.pr-range{-webkit-appearance:none;appearance:none;display:block;width:100%;height:44px;margin:0;background:transparent;cursor:pointer;--fill:0%}
+.pr-range:focus{outline:none}
+.pr-range:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+.pr-range::-webkit-slider-runnable-track{height:6px;border-radius:999px;background:linear-gradient(to right,var(--accent) var(--fill),var(--rule) var(--fill))}
+.pr-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:24px;height:24px;margin-top:-9px;border-radius:50%;background:var(--accent);border:3px solid var(--surface);box-shadow:0 0 0 1px var(--accent),0 1px 4px rgba(0,0,0,.25)}
+.pr-range::-moz-range-track{height:6px;border-radius:999px;background:var(--rule)}
+.pr-range::-moz-range-progress{height:6px;border-radius:999px;background:var(--accent)}
+.pr-range::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--accent);border:3px solid var(--surface);box-shadow:0 0 0 1px var(--accent),0 1px 4px rgba(0,0,0,.25)}
+.pr-recent{position:absolute;top:calc(50% + 9px);height:4px;border-radius:2px;background:var(--viz-soft);pointer-events:none}
+.predict input.pr-num{flex:0 0 auto;width:6.6em;font:inherit;font-family:var(--f-mono);font-size:16px;font-weight:600;text-align:right;color:var(--ink);background:var(--field);border:1px solid var(--rule);border-radius:10px;min-height:46px;padding:10px 12px;font-variant-numeric:tabular-nums}
+.pr-n-note:not(:empty){margin-top:7px}
+
+.pr-cards{display:grid;gap:16px}
+.pr-card{display:grid;gap:12px;align-content:start;min-width:0;background:var(--surface);border:1px solid var(--rule);border-radius:16px;box-shadow:var(--shadow);padding:18px}
+.pr-k{font-family:var(--f-mono);font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.pr-top{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.pr-tag{font-family:var(--f-mono);font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:5px;background:var(--note-soft);color:var(--note)}
+.pr-fig-num{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px}
+.pr-hero{margin:0;font-family:var(--f-display);font-weight:700;font-size:clamp(60px,16vw,80px);line-height:.92;letter-spacing:-.025em}
+.pr-likely{margin:0;font-size:16px;color:var(--muted)}
+.pr-likely b{color:var(--ink);font-weight:700}
+.pr-yours{margin:0;display:flex;align-items:flex-start;gap:8px;font-size:15.5px;font-weight:700;line-height:1.4}
+.pr-yours svg{flex:none;margin-top:2px}
+.pr-yours.above svg{color:var(--gain)}
+.pr-yours.inside svg{color:var(--note)}
+.pr-yours.below svg,.pr-yours.none svg{color:var(--muted)}
+.pr-conf{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:14px;color:var(--muted)}
+.pr-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 11px 3px 9px;border-radius:999px;font-size:13.5px;font-weight:700;white-space:nowrap}
+.pr-badge.high{background:var(--gain-soft);color:var(--gain)}
+.pr-badge.medium{background:var(--accent-soft);color:var(--accent)}
+.pr-badge.low{background:var(--note-soft);color:var(--note)}
+.pr-badge svg,.pr-pos svg{flex:none}
+.pr-main{margin:0;font-size:16.5px;line-height:1.45}
+.pr-date{margin:0;display:flex;align-items:flex-start;gap:8px;font-size:15px}
+.pr-date svg{flex:none;margin-top:3px;color:var(--muted)}
+.pr-card .help{max-width:none}
+
+.pr-you-v{margin:0;font-family:var(--f-display);font-weight:700;font-size:46px;line-height:1;letter-spacing:-.02em}
+.pr-pos{display:inline-flex;align-items:center;gap:7px;justify-self:start;padding:5px 12px 5px 9px;border-radius:999px;font-weight:700;font-size:14.5px;line-height:1.25}
+.pr-pos.above{background:var(--gain-soft);color:var(--gain)}
+.pr-pos.inside{background:var(--note-soft);color:var(--note)}
+.pr-pos.below,.pr-pos.none{background:var(--bg);color:var(--ink)}
+.pr-you-body{display:grid;gap:12px;align-content:start}
+.pr-you-body p{margin:0}
+.pr-stat{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 12px;padding-top:12px;border-top:1px solid var(--rule)}
+.pr-stat .l{font-size:14.5px;color:var(--muted)}
+.pr-stat .v{font-family:var(--f-display);font-weight:700;font-size:24px;line-height:1.1}
+.pr-stat .v small{font-family:var(--f-body);font-size:14.5px;font-weight:400;color:var(--muted)}
+.pr-go{font-weight:700;justify-self:start}
+
+.pr-charts,.pr-ctx{display:grid;gap:16px;min-width:0}
+.pr-fig{margin:0;display:grid;gap:8px;align-content:start;min-width:0;background:var(--surface);border:1px solid var(--rule);border-radius:16px;box-shadow:var(--shadow);padding:16px}
+.pr-fig h3,.pr-quota h3{font-family:var(--f-display);font-weight:600;font-size:19px;line-height:1.25;margin:0;text-wrap:balance}
+.pr-sub{margin:0;font-size:14px;color:var(--muted)}
+.pr-legend{display:flex;flex-wrap:wrap;gap:4px 16px;margin:2px 0 0;padding:0;list-style:none;font-size:13px;color:var(--muted)}
+.pr-legend li{display:inline-flex;align-items:center;gap:6px}
+.pr-legend svg{flex:none;overflow:visible}
+.pr-plot{position:relative;min-width:0;border-radius:8px;touch-action:pan-y;-webkit-tap-highlight-color:transparent;cursor:crosshair}
+.pr-plot:focus{outline:none}
+.pr-plot:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+.pr-plot svg{display:block;width:100%;height:auto;overflow:visible}
+.pr-plot.pick{cursor:pointer}
+.pr-empty{margin:0;padding:14px;border-radius:12px;background:var(--bg);font-size:15px}
+.pr-cap{margin:0;font-size:14px;color:var(--muted);line-height:1.5}
+.pr-cap b{color:var(--ink)}
+.pr-tbtn{justify-self:start;font-size:14px;font-weight:700;padding:6px 0}
+.pr-tbl table{min-width:100%}
+.pr-tbl .bd th,.pr-tbl .bd td{padding-right:14px}
+.pr-tbl .bd th:last-child,.pr-tbl .bd td:last-child{padding-right:0}
+.pr-tbl .bd .n{width:auto;white-space:nowrap;padding-left:0}
+.pr-tbl .bd tr.on td{font-weight:700;color:var(--ink)}
+.pr-tbl .bd tr.on td:first-child{box-shadow:inset 3px 0 0 var(--accent);padding-left:8px}
+.pr-tbl .tag.pr-mine{margin:0 6px 0 0}
+.pr-tbl .bd th.n{white-space:normal}
+.pr-tbl .bd td small{font-family:var(--f-body);font-weight:400}
+#pr-past-tbl td:first-child{white-space:nowrap}
+.pr-how-body .bd th{font-family:var(--f-body);font-size:12.5px;letter-spacing:0;text-transform:none}
+.pr-how-body .pr-tbl .bd th,.pr-how-body .pr-tbl .bd td{padding-right:10px}
+.pr-tbl .bd td.n small{text-align:right}
+
+/* SVG chart marks */
+.pr-plot text{font-family:var(--f-mono);font-size:11.5px;font-weight:500;fill:var(--muted)}
+.pr-plot .pr-axt{font-family:var(--f-body);font-size:12px}
+.pr-grid{stroke:var(--rule);stroke-width:1;shape-rendering:crispEdges}
+.pr-base{stroke:var(--muted);stroke-opacity:.45;stroke-width:1;shape-rendering:crispEdges}
+.pr-band{fill:var(--accent);fill-opacity:var(--band-a);stroke:none}
+.pr-line{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.pr-dot{fill:var(--accent);stroke:var(--surface);stroke-width:2}
+.pr-hollow{fill:var(--surface);stroke:var(--accent);stroke-width:2}
+.pr-rbar{fill:var(--accent);fill-opacity:var(--rbar-a)}
+.pr-proj{fill:none;stroke:var(--accent);stroke-width:1.5;stroke-dasharray:3 4;stroke-linecap:round;opacity:.8}
+.pr-drop{stroke:var(--accent);stroke-opacity:.4;stroke-width:1;shape-rendering:crispEdges}
+.pr-ref{stroke:var(--ink);stroke-width:1.5;stroke-dasharray:6 4;fill:none}
+.pr-mark{stroke:var(--muted);stroke-width:1;stroke-dasharray:2 3}
+.pr-plot .pr-mlab{font-family:var(--f-body);font-size:12px;font-weight:700;fill:var(--muted)}
+.pr-plot .pr-lab{font-size:13px;font-weight:600;fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:4px;stroke-linejoin:round}
+.pr-plot .pr-lab.you{font-family:var(--f-body);font-weight:700;font-size:12.5px}
+.pr-cross{stroke:var(--muted);stroke-width:1;shape-rendering:crispEdges;pointer-events:none}
+.pr-ring{fill:none;stroke:var(--accent);stroke-width:2;pointer-events:none}
+.pr-hit{fill:transparent}
+.pr-bar{fill:var(--viz-soft)}
+.pr-bar.you{fill:var(--accent)}
+.pr-row.on .pr-bar{fill-opacity:.78}
+.pr-plot .pr-row.you text{fill:var(--ink);font-weight:600}
+
+.pr-tip{position:absolute;left:0;top:0;z-index:3;pointer-events:none;display:grid;gap:3px;min-width:130px;max-width:240px;background:var(--surface);color:var(--ink);border:1px solid var(--rule);border-radius:10px;box-shadow:var(--shadow);padding:8px 11px;font-size:13px;line-height:1.35}
+.pr-tip .hd{font-size:12.5px;font-weight:700;color:var(--muted)}
+.pr-tip .r{display:flex;align-items:baseline;gap:7px}
+.pr-tip .v{font-family:var(--f-mono);font-size:14.5px;font-weight:600;color:var(--ink);white-space:nowrap}
+.pr-tip .l{color:var(--muted)}
+.pr-tip .key{flex:none;align-self:center;width:12px;height:0;border-top:2px solid var(--accent);border-radius:1px}
+.pr-tip .key.band{height:8px;border:0;background:var(--accent);opacity:var(--key-a);border-radius:2px}
+.pr-tip .key.ref{border-top:2px dashed var(--ink)}
+.pr-tip .key.none{visibility:hidden}
+.pr-tip .ft{font-size:12px;color:var(--muted)}
+
+.pr-eyebrow{margin:6px 0 0;font-family:var(--f-mono);font-size:12px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.pr-quota{display:grid;gap:14px;align-content:start;min-width:0;background:var(--surface);border:1px solid var(--rule);border-radius:16px;box-shadow:var(--shadow);padding:16px}
+.pr-tiles{display:grid;gap:10px}
+@media (min-width:520px){.pr-tiles{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.pr-tile{display:grid;gap:3px;align-content:start;min-width:0;padding:12px 14px;border-radius:12px;background:var(--bg)}
+.pr-tile .k{font-family:var(--f-mono);font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.pr-tile .v{font-family:var(--f-display);font-weight:700;font-size:26px;line-height:1.1;letter-spacing:-.01em}
+.pr-tile .s{font-size:13.5px;color:var(--muted);line-height:1.4}
+.pr-policy{margin:0;font-size:14.5px}
+.pr-blist{width:100%;border-collapse:collapse;font-size:14px}
+.pr-blist caption{text-align:left;font-weight:700;font-size:14.5px;padding-bottom:6px}
+.pr-blist th{text-align:left;font-weight:400;padding:5px 10px 5px 0;vertical-align:middle;width:36%}
+.pr-blist td{padding:5px 0;vertical-align:middle}
+.pr-blist .bar{display:block;height:10px;min-width:2px;border-radius:0 4px 4px 0;background:var(--accent)}
+.pr-blist .n{width:1%;text-align:right;padding-left:10px;font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+.pr-how{border-top:1px solid var(--rule);min-width:0}
+.pr-how summary{cursor:pointer;padding:14px 0;font-weight:700;font-size:16px;color:var(--accent)}
+.pr-how-body{display:grid;gap:14px;max-width:74ch;padding-bottom:6px;font-size:15px}
+.pr-how-body p{margin:0}
+.pr-how-body ul{margin:0;padding-left:20px;display:grid;gap:6px}
+.pr-how-body .fine{font-weight:700}
+.pr-how-body caption{text-align:left;font-weight:700;padding-bottom:4px}
+
+@media (min-width:760px){
+  .pr-cards{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr)}
+  .pr-card{padding:20px 22px}
+}
+@media (min-width:960px){
+  .predict{margin-top:60px}
+  .pr-charts,.pr-ctx{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}
+  .pr-fig,.pr-quota{padding:18px 20px}
+}
+@media (max-width:370px){
+  .pr-controls,.pr-card,.pr-fig,.pr-quota{padding:14px}
+  .pr-n-row{gap:8px}
+  .predict input.pr-num{width:5.9em;padding:10px}
+}
+</style>
 </head>
 <body>
 
@@ -414,6 +597,108 @@ table.bd{width:100%;border-collapse:collapse;font-size:14.5px}
       </div>
     </aside>
   </div>
+
+  <section class="predict" id="predict" aria-labelledby="h-predict" hidden>
+    <header class="pr-head">
+      <h2 id="h-predict">Next draw prediction</h2>
+      <p class="pr-lede">Choose a draw type and how many people IRCC might invite. We estimate the cut-off, the lowest score that would get an invitation, and compare it with your score from the calculator.</p>
+      <p class="disclaimer">An estimate, not an official IRCC number. Not affiliated with IRCC.</p>
+      <p class="pr-fresh" id="pr-fresh" hidden></p>
+    </header>
+
+    <div class="banner" id="pr-change" hidden></div>
+
+    <div class="pr-controls" role="group" aria-label="Prediction settings">
+      <div class="field pr-f-type">
+        <label for="pr-type">Draw type</label>
+        <div class="select"><select id="pr-type"></select></div>
+      </div>
+      <div class="field pr-f-rules" id="pr-rules-f" hidden>
+        <span class="label" id="pr-rules-l">Rules</span>
+        <div class="seg pr-seg" id="pr-rules" role="radiogroup" aria-labelledby="pr-rules-l"></div>
+      </div>
+      <div class="field pr-f-n">
+        <label for="pr-n">Invitations in the draw</label>
+        <div class="pr-n-row">
+          <div class="pr-slider">
+            <input type="range" class="pr-range" id="pr-n-range" aria-label="Invitations in the draw (slider)">
+            <span class="pr-recent" id="pr-recent" hidden></span>
+          </div>
+          <input type="text" class="pr-num" id="pr-n" inputmode="numeric" autocomplete="off" spellcheck="false" aria-describedby="pr-n-hint">
+        </div>
+        <div>
+          <p class="help" id="pr-n-hint"></p>
+          <p class="warn pr-n-note" id="pr-n-note" aria-live="polite"></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="pr-cards">
+      <div class="pr-card pr-result">
+        <div class="pr-top"><span class="pr-k">Estimated cut-off</span><span class="pr-tag" id="pr-whatif" hidden>What-if</span><span class="pr-tag" id="pr-scen" hidden>Scenario</span></div>
+        <div class="pr-fig-num">
+          <p class="pr-hero" id="pr-hero"></p>
+          <p class="pr-likely">likely between <b id="pr-lo"></b> and <b id="pr-hi"></b></p>
+        </div>
+        <p class="pr-yours" id="pr-yours" hidden></p>
+        <div class="pr-conf"><span class="pr-badge" id="pr-badge"></span><span id="pr-conf-t"></span></div>
+        <p class="pr-main" id="pr-main"></p>
+        <p class="pr-date" id="pr-date"></p>
+        <p class="help" id="pr-note"></p>
+        <p class="help" id="pr-acc"></p>
+      </div>
+      <div class="pr-card pr-you" id="pr-you">
+        <span class="pr-k" id="pr-you-k">Your score</span>
+        <div class="pr-you-body" id="pr-you-body"></div>
+      </div>
+    </div>
+
+    <div class="pr-charts">
+      <figure class="pr-fig" id="pr-curve" aria-labelledby="pr-curve-h">
+        <h3 id="pr-curve-h">Cut-off vs number of invitations</h3>
+        <p class="pr-sub" id="pr-curve-sub"></p>
+        <ul class="pr-legend" id="pr-curve-leg"></ul>
+        <div class="pr-plot pick" id="pr-curve-plot" tabindex="0" role="group" aria-label="Chart of the estimated cut-off for each number of invitations. Use the left and right arrow keys to read values and Enter to use one."><svg aria-hidden="true" focusable="false"></svg><div class="pr-tip" hidden></div></div>
+        <p class="sr" id="pr-curve-live" aria-live="polite"></p>
+        <button type="button" class="linkbtn pr-tbtn" aria-expanded="false" aria-controls="pr-curve-tbl">Show as table</button>
+        <div class="tablewrap pr-tbl" id="pr-curve-tbl" hidden></div>
+      </figure>
+      <figure class="pr-fig" id="pr-past" aria-labelledby="pr-past-h">
+        <h3 id="pr-past-h">Past cut-offs</h3>
+        <p class="pr-sub" id="pr-past-sub"></p>
+        <ul class="pr-legend" id="pr-past-leg"></ul>
+        <div class="pr-plot" id="pr-past-plot" tabindex="0" role="group" aria-label="Chart of past cut-offs and the next estimate. Use the left and right arrow keys to read each draw."><svg aria-hidden="true" focusable="false"></svg><div class="pr-tip" hidden></div></div>
+        <p class="pr-empty" id="pr-past-empty" hidden></p>
+        <p class="sr" id="pr-past-live" aria-live="polite"></p>
+        <button type="button" class="linkbtn pr-tbtn" aria-expanded="false" aria-controls="pr-past-tbl">Show as table</button>
+        <div class="tablewrap pr-tbl" id="pr-past-tbl" hidden></div>
+      </figure>
+    </div>
+
+    <p class="pr-eyebrow">Background for every draw type</p>
+    <div class="pr-ctx">
+      <figure class="pr-fig" id="pr-pool" aria-labelledby="pr-pool-h">
+        <h3 id="pr-pool-h">Who is in the pool</h3>
+        <p class="pr-sub" id="pr-pool-sub"></p>
+        <div class="pr-plot" id="pr-pool-plot" tabindex="0" role="group" aria-label="Bar chart of candidates in each score band. Use the up and down arrow keys to read each band."><svg aria-hidden="true" focusable="false"></svg><div class="pr-tip" hidden></div></div>
+        <p class="pr-cap" id="pr-pool-cap"></p>
+        <p class="sr" id="pr-pool-live" aria-live="polite"></p>
+        <button type="button" class="linkbtn pr-tbtn" aria-expanded="false" aria-controls="pr-pool-tbl">Show as table</button>
+        <div class="tablewrap pr-tbl" id="pr-pool-tbl" hidden></div>
+      </figure>
+      <div class="pr-quota" id="pr-quota">
+        <h3 id="pr-quota-h">Invitations this year</h3>
+        <div class="pr-tiles" id="pr-tiles"></div>
+        <p class="pr-policy" id="pr-policy"></p>
+        <table class="pr-blist" id="pr-blist"></table>
+      </div>
+    </div>
+
+    <details class="pr-how" id="pr-how">
+      <summary>How this prediction works</summary>
+      <div class="pr-how-body" id="pr-how-body"></div>
+    </details>
+  </section>
 
   <footer class="notes">
     <p>Unofficial estimate, not affiliated with IRCC or the Government of Canada. Built from IRCC's published CRS tables and the November 3, 2026 changes, checked October 16, 2026. The score in your Express Entry profile is the one that counts.</p>
@@ -935,6 +1220,14 @@ function setApplied(kind){
   else el.hidden = true;
 }
 
+function missingAnswers(r){
+  const missing = [];
+  if (!p.age) missing.push("age");
+  if (!EDU[p.edu]) missing.push("education");
+  if (!r.l1.complete) missing.push("all four first-language test scores");
+  if (r.withSp && !EDU[p.sp.edu]) missing.push("your partner's education");
+  return missing;
+}
 function renderResults(r){
   $("#t-today").textContent = r.today;
   $("#t-nov").textContent = r.nov;
@@ -974,11 +1267,7 @@ function renderResults(r){
 
   const s = $("#summary");
   let msg, note = false;
-  const missing = [];
-  if (!p.age) missing.push("age");
-  if (!EDU[p.edu]) missing.push("education");
-  if (!r.l1.complete) missing.push("all four first-language test scores");
-  if (r.withSp && !EDU[p.sp.edu]) missing.push("your partner's education");
+  const missing = missingAnswers(r);
   if (missing.length){
     const list = missing.length > 1 ? `${missing.slice(0, -1).join(", ")} and ${missing[missing.length - 1]}` : missing[0];
     msg = `Still to answer: ${list}. Missing answers count as zero.`;
@@ -1003,6 +1292,13 @@ function update(){
   setApplied("hw");
   setApplied("job");
   renderResults(r);
+  shareScore(r);
+}
+// The next-draw section below reads the visitor's scores from here, and what the answers say about CEC and French
+// draw eligibility (1+ year of skilled work in Canada; NCLC 7+ in all four French abilities, which is what earns the French bonus)
+function shareScore(r){
+  window.crsScore = {today:r.today, nov:r.nov, complete:missingAnswers(r).length === 0, pnp:!!p.pnp, cecEligible:p.canExp >= 1, frenchEligible:r.add.french > 0};
+  try { document.dispatchEvent(new CustomEvent("crs:score", {detail:window.crsScore})); } catch (e) {}
 }
 function edited(){ if (start){ start = null; $("#banner").hidden = true; } }
 function drawBanner(){
@@ -1169,6 +1465,1178 @@ function init(){
 }
 buildStaticOptions();
 init();
+})();
+</script>
+
+<script>
+// Next draw prediction. data/draws.json is rebuilt from IRCC's rounds file by .github/scripts/build_predictions.py;
+// this script only reads and interpolates it (linear in ln N between grid rows) and never re-runs the model.
+(function(){
+"use strict";
+const root = document.getElementById("predict");
+if (!root || !window.fetch) return;
+
+const SVGNS = "http://www.w3.org/2000/svg";
+const KNOWN = ["cec","french","healthcare","trades","pnp","senior_managers","physicians","transport","stem","education","agriculture","fsw","fst","general"];
+const REGULAR = ["cec","french","healthcare","trades","pnp"];
+const CONF = {
+  high:{label:"High confidence", text:"Based on many similar draws.", bars:3},
+  medium:{label:"Medium confidence", text:"Based on a few similar draws.", bars:2},
+  low:{label:"Low confidence", text:"Few past draws or unusual conditions; treat this as a rough guide.", bars:1}
+};
+// The after-Nov-3 numbers before any draw under the new rules: a reasoned scenario, never shown as a tested estimate
+const SCEN = {label:"Scenario, uncertain", text:"No draws have happened under the new rules yet. This is our best guess, not a tested estimate."};
+// Draw types whose eligibility the calculator's answers can rule out
+const NEEDS = {
+  pnp:{pill:"Needs a provincial nomination", text:"PNP draws only invite candidates with a provincial nomination. Your answers say you don't have one, so a PNP draw would not invite you.",
+    line:"PNP draws need a provincial nomination. Your answers say you don't have one."},
+  cec:{pill:"Needs 1 year of Canadian work", text:"CEC draws need at least 1 year of skilled work in Canada. Your answers show less than that."},
+  french:{pill:"Needs NCLC 7 in French", text:"French-language draws need NCLC 7 or higher in all four French abilities. Your answers don't show that."}
+};
+const DAY = 864e5;
+const MONO_CH = 0.6; // advance width of IBM Plex Mono (and its fallbacks), in em
+const nf = new Intl.NumberFormat("en-CA");
+const nf1 = new Intl.NumberFormat("en-CA", {maximumFractionDigits:1});
+const cmp = new Intl.NumberFormat("en-CA", {notation:"compact", maximumFractionDigits:1});
+const dfDay = new Intl.DateTimeFormat("en-CA", {month:"short", day:"numeric"});
+const dfDayY = new Intl.DateTimeFormat("en-CA", {month:"short", day:"numeric", year:"numeric"});
+const dfLong = new Intl.DateTimeFormat("en-CA", {month:"long", day:"numeric", year:"numeric"});
+const dfMon = new Intl.DateTimeFormat("en-CA", {month:"short"});
+const dfMonY = new Intl.DateTimeFormat("en-CA", {month:"short", year:"numeric"});
+const $ = id => document.getElementById(id);
+const isNum = x => typeof x === "number" && isFinite(x);
+const isStr = x => typeof x === "string" && x.length > 0;
+const now = new Date();
+const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+// "YYYY-MM-DD" as a local calendar date (new Date("2026-10-27") would be UTC midnight)
+function parseDate(s){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(typeof s === "string" ? s : "");
+  return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+}
+function day(d){ return (d.getFullYear() === today.getFullYear() ? dfDay : dfDayY).format(d); }
+function el(tag, cls, text){
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+function clear(node){ while (node.firstChild) node.removeChild(node.firstChild); }
+function sv(tag, attrs, parent){
+  const e = document.createElementNS(SVGNS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function svText(parent, x, y, str, cls, anchor){
+  const t = sv("text", {x:x, y:y}, parent);
+  if (cls) t.setAttribute("class", cls);
+  if (anchor) t.setAttribute("text-anchor", anchor);
+  t.textContent = str;
+  return t;
+}
+function link(href, text){
+  const a = el("a", null, text);
+  if (/^https:\/\/www\.canada\.ca\//.test(href || "")){ a.href = href; a.target = "_blank"; a.rel = "noopener"; return a; }
+  return el("span", null, text);
+}
+function article(word){ return /^[aeiou]/i.test(word) ? "an" : "a"; }
+
+// ---------- reading the model's grid: the only arithmetic the page does ----------
+function interp(grid, n){
+  const row = r => ({point:r[1], low:r[2], high:r[3]});
+  if (n <= grid[0][0]) return row(grid[0]);
+  if (n >= grid[grid.length - 1][0]) return row(grid[grid.length - 1]);
+  for (let i = 1; i < grid.length; i++){
+    const b = grid[i];
+    if (n === b[0]) return row(b);
+    if (n < b[0]){
+      const a = grid[i - 1], t = (Math.log(n) - Math.log(a[0])) / (Math.log(b[0]) - Math.log(a[0]));
+      return {point:a[1] + t * (b[1] - a[1]), low:a[2] + t * (b[2] - a[2]), high:a[3] + t * (b[3] - a[3])};
+    }
+  }
+  return row(grid[grid.length - 1]);
+}
+// What the page shows: round(point), floor(low), ceil(high)
+function shown(e){ return {point:Math.round(e.point), low:Math.floor(e.low + 1e-9), high:Math.ceil(e.high - 1e-9)}; }
+function phi(z){ // standard normal CDF (Abramowitz and Stegun 7.1.26)
+  const t = 1 / (1 + 0.3275911 * Math.abs(z) / Math.SQRT2);
+  const y = 1 - (((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t) * Math.exp(-z * z / 2);
+  return z >= 0 ? (1 + y) / 2 : (1 - y) / 2;
+}
+function chance(s, e){
+  const sigma = Math.max(1, (s >= e.point ? e.high - e.point : e.point - e.low) / 1.2816);
+  return phi((s - e.point) / sigma);
+}
+// Chance in plain words; the model is not precise enough for more than whole numbers in 100
+function chanceWords(p){
+  return p > 0.99 ? {main:"Very likely", sub:"(over 99 in 100)"} : p < 0.01 ? {main:"Very unlikely", sub:"(under 1 in 100)"} : {main:`About ${Math.round(p * 100)} in 100`, sub:""};
+}
+// Smallest N whose estimated cut-off is at or below the score (the curve never rises with N)
+function needed(grid, nmin, nmax, step, s){
+  const P = n => interp(grid, n).point;
+  if (P(nmin) <= s) return {kind:"small", n:nmin};
+  if (P(nmax) > s) return {kind:"more", n:nmax};
+  let lo = nmin, hi = nmax;
+  while (hi - lo > 1){ const mid = Math.floor((lo + hi) / 2); if (P(mid) <= s) hi = mid; else lo = mid; }
+  return {kind:"n", n:Math.min(nmax, Math.ceil(hi / step) * step)};
+}
+
+// ---------- data ----------
+let D = null, types = [], cur = null, score = null;
+const figs = {};
+
+function validGrid(g){
+  if (!Array.isArray(g) || g.length < 2) return false;
+  for (let i = 0; i < g.length; i++){
+    const r = g[i];
+    if (!Array.isArray(r) || r.length < 4 || !isNum(r[0]) || !isNum(r[1]) || !isNum(r[2]) || !isNum(r[3]) || r[0] <= 0) return false;
+    if (i && r[0] <= g[i - 1][0]) return false;
+  }
+  return true;
+}
+function prepTypes(list){
+  const out = [];
+  (Array.isArray(list) ? list : []).forEach(t => {
+    if (!t || KNOWN.indexOf(t.id) < 0 || !isStr(t.label) || !t.scenarios || typeof t.scenarios !== "object") return;
+    const ok = Object.keys(t.scenarios).filter(k => t.scenarios[k] && validGrid(t.scenarios[k].grid));
+    if (!ok.length) return;
+    const keys = (Array.isArray(t.scenario_order) ? t.scenario_order : []).filter(k => ok.indexOf(k) >= 0);
+    ok.forEach(k => { if (keys.indexOf(k) < 0) keys.push(k); });
+    const g = t.scenarios[keys[0]].grid;
+    const nmin = isNum(t.n_min) && t.n_min > 0 ? t.n_min : g[0][0];
+    const nmax = isNum(t.n_max) && t.n_max > nmin ? t.n_max : g[g.length - 1][0];
+    if (!(nmax > nmin)) return;
+    out.push({t:t, id:t.id, keys:keys, nmin:nmin, nmax:nmax, step:isNum(t.n_step) && t.n_step > 0 ? t.n_step : 1, short:isStr(t.short) ? t.short : t.label});
+  });
+  return out;
+}
+function sc(){ return cur.w.t.scenarios[cur.key]; }
+function scLabel(w, k){
+  const s = w.t.scenarios[k];
+  return s && isStr(s.label) ? s.label : k === "after_nov3" ? "After the Nov 3 change" : "Current rules";
+}
+function changeDate(){ return D.timing && D.timing.change ? parseDate(D.timing.change.date) : null; }
+function changeShort(){ const d = changeDate(); return d ? dfDay.format(d) : "Nov 3"; }
+function latestDraw(){ const L = D.provenance && D.provenance.latest_draw; return L && parseDate(L.date) ? L : null; }
+function defaultKey(w){
+  const ch = changeDate();
+  if (w.keys.indexOf("after_nov3") >= 0 && ch && today >= ch) return "after_nov3";
+  if (w.keys.indexOf(w.t.default_scenario) >= 0) return w.t.default_scenario;
+  return w.keys[0];
+}
+// The calculator's score that matches the scenario's rules (null until the calculator is complete)
+function scoreFor(s0){
+  if (!score || !score.complete) return null;
+  const v = s0.rules === "after_nov3" ? score.nov : score.today;
+  return isNum(v) ? v : null;
+}
+// True until IRCC holds a draw under the new rules (the data's regime says so; without it, the latest draw's date decides)
+function preChange(){
+  const R = D.provenance && D.provenance.regime, ch = changeDate(), L = latestDraw();
+  if (isStr(R)) return R === "before_nov3";
+  return !!ch && (!L || parseDate(L.date) < ch);
+}
+function isScenario(s0){ return s0.rules === "after_nov3" && preChange(); }
+// "no": the calculator's answers rule the visitor out; "yes": they show the visitor qualifies, or the draw is open to all;
+// "unknown": a category the calculator does not ask about
+function eligibility(w){
+  if (w.id === "pnp") return score.pnp ? "yes" : "no";
+  if (w.id === "cec" && typeof score.cecEligible === "boolean") return score.cecEligible ? "yes" : "no";
+  if (w.id === "french" && typeof score.frenchEligible === "boolean") return score.frenchEligible ? "yes" : "no";
+  if (w.id === "general" || w.t.hypothetical) return "yes";
+  return "unknown";
+}
+// The visitor's score against the chosen draw (null until the calculator is complete)
+function standing(){
+  const w = cur.w, s0 = sc(), s = scoreFor(s0);
+  if (s == null) return null;
+  const raw = interp(s0.grid, cur.n), e = shown(raw), elig = eligibility(w);
+  return {s:s, raw:raw, e:e, pos:s > e.high ? "above" : s < e.low ? "below" : "inside", elig:elig, need:elig === "no" ? NEEDS[w.id] : null};
+}
+
+// ---------- setup ----------
+function setup(d){
+  D = d;
+  types = prepTypes(d.types);
+  if (!types.length) throw new Error("no usable draw types");
+  score = window.crsScore || null;
+  cur = {w:null, key:null, picked:null, n:0};
+  buildHead();
+  buildSelect();
+  buildBanner();
+  makeFig("curve", drawCurve, tipCurve, tableCurve, {activate:i => { if (figs.curve.geom){ const n = figs.curve.geom.g[i][0]; setN(n, "chart"); say(figs.curve, `Using ${nf.format(n)} invitations.`); } }, focusIndex:curveIndex});
+  makeFig("past", drawPast, tipPast, tablePast, {focusIndex:f => f.geom ? f.geom.pts.length - 1 : 0});
+  makeFig("pool", drawPool, tipPool, tablePool, {focusIndex:f => f.geom && f.geom.you >= 0 ? f.geom.you : 0});
+  if (!poolBands().length) figs.pool.el.hidden = true;
+  buildQuota();
+  buildHow();
+  bindControls();
+  selectType((types.filter(w => w.id === "cec")[0] || types[0]).id);
+  renderPoolText();
+  root.hidden = false;
+  watch();
+  if (location.hash === "#predict") root.scrollIntoView(); // a shared link arrives before the section exists
+}
+
+function buildHead(){
+  const L = latestDraw(), p = $("pr-fresh");
+  if (!L || !isStr(L.number)) return;
+  clear(p);
+  p.append("Latest IRCC draw: ", el("b", null, `#${L.number}`), ` on ${dfLong.format(parseDate(L.date))}`);
+  const bits = [];
+  if (isStr(L.type_label) && L.type !== "other") bits.push(L.type_label);
+  else if (isStr(L.name)) bits.push(L.name);
+  if (isNum(L.size)) bits.push(`${nf.format(L.size)} invited`);
+  if (isNum(L.crs)) bits.push(`cut-off ${L.crs}`);
+  p.append(bits.length ? ` (${bits.join(", ")}).` : ".", " Updated automatically a few times a day.");
+  p.hidden = false;
+}
+function buildSelect(){
+  const sel = $("pr-type"), yr = D.quota && isNum(D.quota.year) ? D.quota.year : today.getFullYear();
+  clear(sel);
+  [["Regular draws", w => REGULAR.indexOf(w.id) >= 0 && !w.t.hypothetical],
+   [`Other ${yr} categories`, w => REGULAR.indexOf(w.id) < 0 && !w.t.hypothetical],
+   ["What-if", w => !!w.t.hypothetical]].forEach(gr => {
+    const list = types.filter(gr[1]);
+    if (!list.length) return;
+    const og = document.createElement("optgroup");
+    og.label = gr[0];
+    list.forEach(w => { const o = el("option", null, w.t.label); o.value = w.id; og.appendChild(o); });
+    sel.appendChild(og);
+  });
+}
+function buildBanner(){
+  const ch = D.timing && D.timing.change, d = changeDate();
+  if (!ch || !d || !types.some(w => w.keys.indexOf("after_nov3") >= 0)) return;
+  const pause = isNum(ch.pause_max_days) ? (ch.pause_max_days === 14 ? "two weeks" : `${ch.pause_max_days} days`) : "two weeks";
+  const box = $("pr-change"), msg = el("span");
+  msg.append(el("b", null, `${dfDay.format(d)} change.`), ` From ${dfLong.format(d)}, IRCC adds points for Canadian work in high-wage occupations and for qualifying job offers, and pauses draws for up to ${pause} while it recalculates scores. Cut-offs will probably rise, most for Canadian Experience Class draws. Estimates for draws after ${dfDay.format(d)} are less certain.`);
+  clear(box);
+  box.appendChild(msg);
+  box.hidden = false;
+}
+
+// ---------- controls ----------
+function bindControls(){
+  $("pr-type").addEventListener("change", e => selectType(e.target.value));
+  $("pr-rules").addEventListener("change", e => {
+    const k = e.target && e.target.value;
+    if (!k || cur.w.keys.indexOf(k) < 0) return;
+    cur.key = k;
+    cur.picked = k;
+    update();
+  });
+  const range = $("pr-n-range"), num = $("pr-n");
+  range.addEventListener("input", () => { const v = cur.stops[Math.round(+range.value)]; if (isNum(v)) setN(v, "range"); });
+  num.addEventListener("input", () => {
+    note("");
+    const v = parseCount(num.value);
+    if (v != null && v >= cur.w.nmin && v <= cur.w.nmax) setN(v, "num");
+  });
+  num.addEventListener("change", commitNum);
+  num.addEventListener("blur", commitNum);
+  num.addEventListener("keydown", e => {
+    if (e.key === "Enter"){ e.preventDefault(); commitNum(); }
+    else if (e.key === "ArrowUp" || e.key === "ArrowDown"){
+      // the next slider stop up or down, so the arrows move in the same steps as the slider
+      e.preventDefault();
+      const next = e.key === "ArrowUp" ? cur.stops.filter(v => v > cur.n)[0] : cur.stops.filter(v => v < cur.n).pop();
+      if (isNum(next)) setN(next, "key");
+    }
+  });
+  document.addEventListener("crs:score", e => {
+    score = (e && e.detail) || window.crsScore || null;
+    renderYou();
+    renderFigText();
+    renderPoolText();
+    invalidate(["curve", "past", "pool"]);
+  });
+  document.addEventListener("pointerdown", e => {
+    Object.keys(figs).forEach(k => { const f = figs[k]; if (f.i >= 0 && !f.plot.contains(e.target)) hideTip(f); });
+  });
+}
+// "2,500", "2 500" and "2500" are 2,500; so are "2.5k" and "2,5k"
+function parseCount(s){
+  const t = String(s).trim().toLowerCase(), k = /^(\d+(?:[.,]\d{1,2})?)\s*k$/.exec(t);
+  if (k) return Math.round(parseFloat(k[1].replace(",", ".")) * 1000);
+  const d = t.replace(/[^\d]/g, "");
+  return d && d.length < 9 ? parseInt(d, 10) : null;
+}
+// A typed number outside the range is corrected, and the note says so (an aria-live region)
+function commitNum(){
+  const w = cur.w, raw = $("pr-n").value, v = parseCount(raw);
+  if (v == null){
+    setN(cur.n, "commit");
+    if (raw.trim()) note(`Enter a number from ${nf.format(w.nmin)} to ${nf.format(w.nmax)}. We kept ${nf.format(cur.n)}.`);
+    return;
+  }
+  setN(v, "commit");
+  if (v < w.nmin) note(`Changed to ${nf.format(cur.n)}, the smallest number we estimate.`);
+  else if (v > w.nmax) note(`Changed to ${nf.format(cur.n)}, the largest number we estimate.`);
+}
+function note(text){ const p = $("pr-n-note"); if (p.textContent !== text) p.textContent = text; }
+function clampN(v){ return Math.min(cur.w.nmax, Math.max(cur.w.nmin, Math.round(v))); }
+// Slider stops: every n_step at the small end, then round steps of about a fifth of the size, so the spacing grows with
+// the number and typical draw sizes get more of the track. The number field still takes any value in range.
+function sizeStops(w){
+  const out = [w.nmin], on = (a, b) => Math.abs(a / b - Math.round(a / b)) < 1e-9;
+  let v = w.nmin, s = w.step;
+  while (v < w.nmax && out.length < 400){
+    const want = v / 5, p = Math.pow(10, Math.floor(Math.log10(want)));
+    // a wider step takes over only where the value already sits on its grid, so the spacing never shrinks
+    [1, 2, 2.5, 5, 10, 20, 25, 50].forEach(k => { const c = k * p / 10; if (c <= want && c > s && on(c, w.step) && on(v, c)) s = c; });
+    v = Math.min(w.nmax, Math.floor(v / s + 1e-9) * s + s);
+    out.push(v);
+  }
+  return out;
+}
+function stopIndex(n){ // the nearest stop, on a log scale
+  const st = cur.stops;
+  let best = 0;
+  st.forEach((v, i) => { if (Math.abs(Math.log(v / n)) < Math.abs(Math.log(st[best] / n))) best = i; });
+  return best;
+}
+function stopPos(n){ // where n falls along the track, 0 to 1 (log-interpolated between stops)
+  const st = cur.stops, k = st.length - 1;
+  if (n <= st[0]) return 0;
+  if (n >= st[k]) return 1;
+  let i = 1;
+  while (st[i] < n) i++;
+  return (i - 1 + Math.log(n / st[i - 1]) / Math.log(st[i] / st[i - 1])) / k;
+}
+
+function selectType(id){
+  const w = types.filter(x => x.id === id)[0] || types[0];
+  cur.w = w;
+  cur.key = cur.picked && w.keys.indexOf(cur.picked) >= 0 ? cur.picked : defaultKey(w);
+  cur.n = clampN(isNum(w.t.default_n) ? w.t.default_n : w.nmin);
+  cur.stops = sizeStops(w);
+  $("pr-type").value = w.id;
+  note("");
+  buildRules();
+  syncSlider(true);
+  update();
+}
+function buildRules(){
+  const w = cur.w, box = $("pr-rules");
+  clear(box);
+  $("pr-rules-f").hidden = w.keys.length < 2;
+  if (w.keys.length < 2) return;
+  box.style.gridTemplateColumns = `repeat(${w.keys.length},minmax(0,1fr))`;
+  w.keys.forEach(k => {
+    const inp = document.createElement("input");
+    inp.type = "radio";
+    inp.name = "pr-rules";
+    inp.id = "pr-rules-" + k.replace(/[^\w-]/g, "");
+    inp.value = k;
+    inp.checked = k === cur.key;
+    const lab = el("label", null, scLabel(w, k));
+    lab.htmlFor = inp.id;
+    box.append(inp, lab);
+  });
+}
+function setN(v, src){
+  const n = clampN(v), changed = n !== cur.n;
+  cur.n = n;
+  if (src !== "commit") note("");
+  if (src !== "range") $("pr-n-range").value = String(stopIndex(n));
+  if (src !== "num") $("pr-n").value = nf.format(n);
+  if (changed) update(); else syncSlider(false);
+}
+// The slider moves over cur.stops by index; aria-valuetext reads out the number itself
+function syncSlider(full){
+  const w = cur.w, r = $("pr-n-range"), last = cur.stops.length - 1;
+  if (full){
+    r.min = "0";
+    r.max = String(last);
+    r.step = "1";
+    r.value = String(stopIndex(cur.n));
+    $("pr-n").value = nf.format(cur.n);
+    const rs = (Array.isArray(w.t.recent_sizes) ? w.t.recent_sizes : []).filter(isNum);
+    const band = $("pr-recent"), hint = $("pr-n-hint"), range = ` Enter ${nf.format(w.nmin)} to ${nf.format(w.nmax)}.`;
+    if (rs.length){
+      const f0 = stopPos(Math.min(...rs)), f1 = stopPos(Math.max(...rs));
+      band.style.left = `calc(12px + (100% - 24px) * ${f0.toFixed(4)} - 2px)`;
+      band.style.width = `calc((100% - 24px) * ${(f1 - f0).toFixed(4)} + 4px)`;
+      band.hidden = false;
+      hint.textContent = `Recent ${w.short} draws: ${rs.map(x => nf.format(x)).join(" · ")} (shaded under the slider).` + range;
+    } else {
+      band.hidden = true;
+      const L = w.t.last_draw;
+      hint.textContent = (L && parseDate(L.date) && isNum(L.size)
+        ? `No draw of this type in the last 12 months. The last one, on ${dfLong.format(parseDate(L.date))}, invited ${nf.format(L.size)} people.`
+        : "No draw of this type in the last 12 months.") + range;
+    }
+  }
+  r.style.setProperty("--fill", `${(+r.value / Math.max(1, last) * 100).toFixed(2)}%`);
+  const e = shown(interp(sc().grid, cur.n));
+  r.setAttribute("aria-valuetext", `${nf.format(cur.n)} invitations: estimated cut-off ${e.point}, likely ${e.low} to ${e.high}`);
+}
+
+// ---------- result and score cards ----------
+function update(){
+  syncSlider(false);
+  renderResult();
+  renderYou();
+  renderFigText();
+  invalidate(["curve", "past"]);
+}
+function confIcon(bars){
+  const s = sv("svg", {width:14, height:14, viewBox:"0 0 14 14", "aria-hidden":"true", focusable:"false"});
+  [[1, 9, 4], [5.5, 5, 8], [10, 1, 12]].forEach((b, i) => {
+    sv("rect", {x:b[0], y:b[1], width:3, height:b[2], rx:1, fill:"currentColor", "fill-opacity":i < bars ? "1" : ".28"}, s);
+  });
+  return s;
+}
+function icon(kind){
+  const s = sv("svg", {width:16, height:16, viewBox:"0 0 16 16", fill:"none", stroke:"currentColor", "stroke-width":"1.8", "stroke-linecap":"round", "stroke-linejoin":"round", "aria-hidden":"true", focusable:"false"});
+  if (kind === "cal"){ sv("rect", {x:2, y:3, width:12, height:11, rx:2}, s); sv("path", {d:"M2 7h12M5.5 1.5v3M10.5 1.5v3"}, s); }
+  else if (kind === "above") sv("path", {d:"M8 13V3M3.5 7.5 8 3l4.5 4.5"}, s);
+  else if (kind === "below") sv("path", {d:"M8 3v10M3.5 8.5 8 13l4.5-4.5"}, s);
+  else if (kind === "inside"){ sv("path", {d:"M2.5 5.5h11M2.5 10.5h11"}, s); sv("circle", {cx:8, cy:8, r:1.6, fill:"currentColor", stroke:"none"}, s); }
+  else { sv("circle", {cx:8, cy:8, r:6}, s); sv("path", {d:"M8 7.5v4M8 4.8v.1"}, s); }
+  return s;
+}
+function mainSentence(w, s0, n, e){
+  const N = nf.format(n), tail = `the cut-off would be about ${e.point}, likely between ${e.low} and ${e.high}.`;
+  if (s0.applies === false) return `Under the old rules, a ${w.t.label} draw of ${N} people would have a cut-off of about ${e.point}, likely between ${e.low} and ${e.high}. Shown for comparison only.`;
+  if (isScenario(s0)){
+    const might = `the cut-off might be about ${e.point}, likely between ${e.low} and ${e.high}.`;
+    return w.t.hypothetical ? `Scenario: if IRCC invited ${N} people in a what-if draw open to ${w.short.toLowerCase()} after ${changeShort()}, ${might}`
+      : `Scenario: if IRCC invites ${N} people in the first ${w.short} draw after ${changeShort()}, ${might}`;
+  }
+  if (w.t.hypothetical) return `If IRCC invited ${N} people in a what-if draw open to ${w.short.toLowerCase()}, ${tail}`;
+  if (cur.key === "after_nov3") return `If IRCC invites ${N} people in the first ${w.t.label} draw after the ${changeShort()} change, ${tail}`;
+  return `If IRCC invites ${N} people in the next ${w.t.label} draw, ${tail}`;
+}
+function dateLine(w, s0){
+  if (s0.applies === false) return `For comparison only: no draw under the old rules is expected before the ${changeShort()} change.`;
+  const exp = parseDate(s0.expected_date);
+  const win = Array.isArray(s0.window) ? s0.window.map(parseDate) : [];
+  const end = win[1] || exp;
+  const L = latestDraw();
+  if (end && today > end && L) return `IRCC has not published a draw since ${dfLong.format(parseDate(L.date))}; this estimate assumes the draw happens soon.`;
+  if (!exp) return "";
+  if (w.t.hypothetical) return `In this what-if, ${w.id === "general" ? "an all-program" : `${article(w.short)} ${w.short}`} draw replaces the CEC draw expected around ${day(exp)}. IRCC does not announce draw dates.`;
+  const rare = !isNum(w.t.typical_gap_days) || w.t.typical_gap_days > 21;
+  return (rare ? `If IRCC holds ${article(w.short)} ${w.short} draw in the next cycle, expect it around ${day(exp)}.` : `Expected around ${day(exp)}.`) + " IRCC does not announce draw dates.";
+}
+// In the post-change scenario the backtest says nothing about the new rules, so the line names the rules it was tested on
+function accLine(w, scen){
+  const b = w.t.backtest;
+  if (!b || !isNum(b.n) || b.n < 1 || !isNum(b.mae)) return "";
+  const from = parseDate(b.from), to = parseDate(b.to), lead = scen ? "Accuracy under current rules" : "Accuracy";
+  const base = isNum(b.baseline_last_mae) ? ` Simply repeating the last cut-off was off by ${nf1.format(b.baseline_last_mae)} points.` : "";
+  const draws = `${b.n} draw${b.n === 1 ? "" : "s"}`;
+  if (from && to && (to - from) / DAY <= 370 && (today - to) / DAY <= 400) return `${lead}: over the past 12 months our ${w.short} estimates were off by ${nf1.format(b.mae)} points on average (${draws}).${base}`;
+  const span = from && to ? `, ${dfMonY.format(from)} to ${dfMonY.format(to)}` : "";
+  return `${lead}: tested on ${draws} (${w.short}${span}), our estimates were off by ${nf1.format(b.mae)} points on average.${base}`;
+}
+function renderResult(){
+  const w = cur.w, t = w.t, s0 = sc(), e = shown(interp(s0.grid, cur.n));
+  $("pr-hero").textContent = nf.format(e.point);
+  $("pr-lo").textContent = nf.format(e.low);
+  $("pr-hi").textContent = nf.format(e.high);
+  $("pr-whatif").hidden = !t.hypothetical;
+  const scen = isScenario(s0);
+  $("pr-scen").hidden = !scen;
+  const has = k => Object.prototype.hasOwnProperty.call(CONF, k);
+  const level = scen ? "low" : has(s0.confidence) ? s0.confidence : has(t.confidence) ? t.confidence : "low", c = CONF[level], badge = $("pr-badge");
+  clear(badge);
+  badge.className = "pr-badge " + level;
+  badge.append(confIcon(c.bars), scen ? SCEN.label : c.label);
+  $("pr-conf-t").textContent = scen ? SCEN.text : c.text;
+  $("pr-main").textContent = mainSentence(w, s0, cur.n, e);
+  const dl = $("pr-date"), txt = dateLine(w, s0);
+  clear(dl);
+  if (txt) dl.append(icon("cal"), el("span", null, txt));
+  dl.hidden = !txt;
+  $("pr-note").textContent = isStr(t.note) ? t.note : "";
+  $("pr-note").hidden = !isStr(t.note);
+  const acc = accLine(w, scen);
+  $("pr-acc").textContent = acc;
+  $("pr-acc").hidden = !acc;
+}
+// One line under the estimate that answers "would I get in?" without scrolling to the score card
+function renderYours(){
+  const box = $("pr-yours"), st = standing();
+  clear(box);
+  box.hidden = !st;
+  if (!st) return;
+  const w = cur.w, s0 = sc(), unsure = st.elig === "unknown", cat = `if you qualify for the ${w.short} category, `;
+  const where = `${s0.rules === "after_nov3" ? `Your score from ${changeShort()}` : "Your score today"} (${nf.format(st.s)}) is ${st.pos} this range`;
+  let kind = st.pos, text;
+  if (st.need){ kind = "none"; text = st.need.line || st.need.text; }
+  else if (s0.applies === false) text = `${where}. Old rules, shown for comparison only.`;
+  else if (st.pos === "above") text = `${where}: ${unsure ? cat : ""}an invitation is very likely.`;
+  else if (st.pos === "below") text = `${where}: an invitation is unlikely${unsure ? ", even if you qualify" : ""}.`;
+  else text = `${where}: ${unsure ? cat : ""}it could go either way.`;
+  box.className = "pr-yours " + kind;
+  box.append(icon(kind), el("span", null, text));
+}
+function renderYou(){
+  const w = cur.w, t = w.t, s0 = sc(), after = s0.rules === "after_nov3", body = $("pr-you-body");
+  renderYours();
+  $("pr-you-k").textContent = after ? `Your score from ${changeShort()}` : "Your score today";
+  clear(body);
+  const st = standing();
+  if (!st){
+    $("pr-you-k").textContent = "Your score";
+    const go = el("a", "pr-go", "Go to the calculator");
+    go.href = "#f";
+    body.append(el("p", null, "Fill in the calculator above to compare your score."), go);
+    return;
+  }
+  const s = st.s, S = nf.format(s);
+  body.appendChild(el("p", "pr-you-v", S));
+  const pill = (kind, text) => { const b = el("span", "pr-pos " + kind); b.append(icon(kind), text); return b; };
+  // Eligibility comes before any verdict: a clear "no" from the answers replaces the verdict
+  if (st.need){
+    body.append(pill("none", st.need.pill), el("p", null, st.need.text));
+    return;
+  }
+  const unsure = st.elig === "unknown", pos = st.pos, p = chance(s, st.raw), cw = chanceWords(p);
+  if (unsure) body.appendChild(el("p", null, `Only candidates who qualify for the ${t.label} category can be invited in these draws. The calculator can't check this for you.`));
+  const iff = unsure ? `If you qualify for the ${w.short} category, your` : "Your";
+  body.append(pill(pos, (pos === "above" ? "Above the likely range" : pos === "below" ? "Below the likely range" : "Inside the likely range") + (unsure && pos !== "below" ? ", if you qualify" : "")),
+    el("p", null, pos === "above" ? `${iff} score of ${S} is ${p > 0.99 ? "well " : ""}above the likely range, so you would very likely be invited.`
+      : pos === "below" ? `Your score of ${S} is below the likely range, so an invitation in this draw is unlikely${unsure ? `, even if you qualify for the ${w.short} category` : ""}.`
+      : `${iff} score of ${S} is inside the likely range, so it could go either way.`));
+  const stat = el("div", "pr-stat"), v = el("span", "v", cw.main);
+  if (cw.sub) v.append(" ", el("small", null, cw.sub));
+  stat.append(el("span", "l", `Chance if ${unsure ? "you qualify and " : ""}IRCC invites ${nf.format(cur.n)}`), v);
+  body.appendChild(stat);
+  const nd = needed(s0.grid, w.nmin, w.nmax, w.step, s);
+  body.appendChild(el("p", null, nd.kind === "small" ? `Even a small draw of ${nf.format(nd.n)} people would reach your score.`
+    : nd.kind === "more" ? `IRCC would need to invite more than ${nf.format(nd.n)} people in this draw to reach your score.`
+    : `IRCC would need to invite about ${nf.format(nd.n)} people in this draw to reach your score.`));
+  let extra = "";
+  if (w.id === "pnp") extra = "PNP draws invite almost everyone with a nomination, so you are very likely to be invited in the next PNP draw.";
+  else if (t.hypothetical) extra = "This compares your score with a what-if, not a planned draw.";
+  if (isScenario(s0)) extra = (extra ? extra + " " : "") + "The cut-off after the change is a scenario, not a tested estimate.";
+  if (s0.applies === false) extra = (extra ? extra + " " : "") + "Old rules, shown for comparison only.";
+  if (extra) body.appendChild(el("p", "help", extra));
+}
+
+// ---------- chart chrome ----------
+function legendItem(kind, text){
+  const li = el("li"), s = sv("svg", {width:18, height:12, viewBox:"0 0 18 12", "aria-hidden":"true", focusable:"false"});
+  if (kind === "line") sv("line", {x1:1, y1:6, x2:17, y2:6, class:"pr-line"}, s);
+  else if (kind === "band") sv("rect", {x:1, y:1, width:16, height:10, rx:2, class:"pr-band"}, s);
+  else if (kind === "ref") sv("line", {x1:1, y1:6, x2:17, y2:6, class:"pr-ref"}, s);
+  else if (kind === "dot"){ sv("line", {x1:1, y1:6, x2:17, y2:6, class:"pr-line"}, s); sv("circle", {cx:9, cy:6, r:4, class:"pr-dot"}, s); }
+  else if (kind === "est"){ sv("rect", {x:5.5, y:0, width:7, height:12, rx:3.5, class:"pr-rbar"}, s); sv("circle", {cx:9, cy:6, r:3.5, class:"pr-hollow"}, s); }
+  li.append(s, text);
+  return li;
+}
+function renderFigText(){
+  const w = cur.w, s0 = sc(), you = scoreFor(s0), scen = isScenario(s0);
+  const yourLab = s0.rules === "after_nov3" ? `Your score from ${changeShort()} (new rules)` : "Your score today";
+  $("pr-curve-sub").textContent = `${w.t.label} · ${scLabel(w, cur.key)}. Tap or click the chart to set the number of invitations.`;
+  const lc = $("pr-curve-leg");
+  clear(lc);
+  lc.append(legendItem("line", "Estimated cut-off"), legendItem("band", "Likely range"));
+  if (you != null) lc.appendChild(legendItem("ref", yourLab));
+  const nd = pastDraws(w.id).length;
+  $("pr-past-sub").textContent = !nd ? `${w.t.label}.` : scen
+    ? `${w.t.label} draws in the last 12 months, all under the old rules, and the scenario for ${nf.format(cur.n)} invitations after ${changeShort()}.`
+    : `${w.t.label} draws in the last 12 months, and the estimate for ${nf.format(cur.n)} invitations.`;
+  const lp = $("pr-past-leg");
+  clear(lp);
+  lp.append(legendItem("dot", "Past cut-offs"), legendItem("est", s0.applies === false ? "Old-rules estimate and likely range" : scen ? `Scenario after ${changeShort()} and likely range` : "Next draw estimate and likely range"));
+  if (you != null) lp.appendChild(legendItem("ref", yourLab));
+}
+function frame(svg, W, H){ svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("width", W); svg.setAttribute("height", H); }
+function niceStep(span, count){
+  const raw = span / Math.max(1, count), p = Math.pow(10, Math.floor(Math.log10(raw)));
+  const ms = p >= 10 ? [1, 2, 2.5, 5, 10] : [1, 2, 5, 10];
+  for (let i = 0; i < ms.length; i++) if (ms[i] * p >= raw) return ms[i] * p;
+  return 10 * p;
+}
+function niceDomain(lo, hi, count){
+  if (!(hi > lo)){ lo -= 5; hi += 5; }
+  const st = niceStep(hi - lo, count), a = Math.floor(lo / st) * st, b = Math.ceil(hi / st) * st, ticks = [];
+  for (let v = a; v <= b + st / 1e6; v += st) ticks.push(Math.round(v * 1e6) / 1e6);
+  return {min:a, max:b, ticks:ticks};
+}
+function logTicks(n0, n1){
+  const out = [];
+  for (let e = Math.floor(Math.log10(n0)); e <= Math.ceil(Math.log10(n1)); e++){
+    [1, 2, 5].forEach(k => { const v = k * Math.pow(10, e); if (v >= n0 * 0.999 && v <= n1 * 1.001) out.push(v); });
+  }
+  return out;
+}
+function boxOf(t){ try { return t.getBBox(); } catch (e) { return null; } }
+function overlaps(a, b){
+  const r = a && boxOf(a), q = b && boxOf(b);
+  if (!r || !q || !r.width || !q.width) return false;
+  return r.x < q.x + q.width + 4 && q.x < r.x + r.width + 4 && r.y < q.y + q.height + 1 && q.y < r.y + r.height + 1;
+}
+// The visitor's score as a labelled reference line; an edge label with an arrow when it is off the chart
+function refLine(svg, you, ys, yd, m, pw, ph, side, name){
+  if (you == null) return null;
+  const x = side === "end" ? m.l + pw : m.l + 4, anchor = side === "end" ? "end" : "start", label = name ? `${name}: ${nf.format(you)}` : `Your score ${nf.format(you)}`;
+  if (you > yd.max) return {lab:svText(svg, x, m.t + 12, `↑ ${label}`, "pr-lab you", anchor), y:null};
+  if (you < yd.min) return {lab:svText(svg, x, m.t + ph - 7, `↓ ${label}`, "pr-lab you", anchor), y:null};
+  const y = ys(you);
+  sv("line", {x1:m.l, x2:m.l + pw, y1:y, y2:y, class:"pr-ref"}, svg);
+  return {lab:svText(svg, x, y - 7 < m.t + 8 ? y + 16 : y - 7, label, "pr-lab you", anchor), y:y};
+}
+// Put the reference label where it covers no data: try each end of the line, then points along it, above and
+// below; env(x) lists the marks at x as [top, bottom, weight], and the spot with the least weighted overlap wins
+function placeRef(ref, order, m, pw, ph, env, avoid){
+  if (!ref) return;
+  const cands = [];
+  order.concat(["0.75", "0.5", "0.25"]).forEach(side => {
+    const x = side === "end" ? m.l + pw : side === "start" ? m.l + 4 : m.l + pw * +side;
+    const anchor = side === "end" ? "end" : side === "start" ? "start" : "middle";
+    if (ref.y == null) cands.push({x:x, y:+ref.lab.getAttribute("y"), anchor:anchor});
+    else {
+      if (ref.y - 7 >= m.t + 10) cands.push({x:x, y:ref.y - 7, anchor:anchor});
+      if (ref.y + 16 <= m.t + ph - 2) cands.push({x:x, y:ref.y + 16, anchor:anchor});
+    }
+  });
+  let best = null, bestHit = Infinity;
+  for (let k = 0; k < cands.length; k++){
+    const c = cands[k];
+    ref.lab.setAttribute("x", c.x);
+    ref.lab.setAttribute("y", c.y);
+    ref.lab.setAttribute("text-anchor", c.anchor);
+    const b = boxOf(ref.lab);
+    if (!b) return;
+    let hit = 0;
+    for (let x = b.x; x <= b.x + b.width; x += 3) env(x).forEach(e => { if (b.y < e[1] && b.y + b.height > e[0]) hit += e[2]; });
+    avoid.forEach(t => { if (overlaps(ref.lab, t)) hit += 1000; });
+    if (hit < bestHit){ bestHit = hit; best = c; }
+    if (!hit) break;
+  }
+  if (best){ ref.lab.setAttribute("x", best.x); ref.lab.setAttribute("y", best.y); ref.lab.setAttribute("text-anchor", best.anchor); }
+}
+
+// ---------- chart A: cut-off vs number of invitations ----------
+function curveIndex(f){
+  if (!f.geom) return 0;
+  const g = f.geom.g;
+  let best = 0;
+  g.forEach((r, i) => { if (Math.abs(Math.log(r[0] / cur.n)) < Math.abs(Math.log(g[best][0] / cur.n))) best = i; });
+  return best;
+}
+function drawCurve(f){
+  const s0 = sc(), g = s0.grid, svg = f.svg;
+  clear(svg);
+  const W = Math.max(220, Math.floor(f.plot.clientWidth)), H = W < 440 ? 240 : 276;
+  const m = {l:42, r:18, t:22, b:44}, pw = W - m.l - m.r, ph = H - m.t - m.b;
+  frame(svg, W, H);
+  const n0 = g[0][0], n1 = g[g.length - 1][0], L0 = Math.log(n0), L1 = Math.log(n1);
+  const xs = n => m.l + (Math.log(Math.max(n0, Math.min(n1, n))) - L0) / (L1 - L0) * pw;
+  let lo = Math.min(...g.map(r => r[2])), hi = Math.max(...g.map(r => r[3]));
+  const pad = (hi - lo) * 0.04;
+  lo -= pad; hi += pad;
+  const you = scoreFor(s0);
+  if (you != null && you >= lo - 45 && you <= hi + 45){ lo = Math.min(lo, you - 2); hi = Math.max(hi, you + 2); }
+  const yd = niceDomain(lo, hi, Math.max(3, Math.floor(ph / 40)));
+  const ys = v => m.t + (yd.max - v) / (yd.max - yd.min) * ph;
+  yd.ticks.forEach(v => {
+    sv("line", {x1:m.l, x2:m.l + pw, y1:ys(v), y2:ys(v), class:"pr-grid"}, svg);
+    svText(svg, m.l - 8, ys(v) + 4, nf.format(v), null, "end");
+  });
+  sv("line", {x1:m.l, x2:m.l + pw, y1:m.t + ph, y2:m.t + ph, class:"pr-base"}, svg);
+  logTicks(n0, n1).forEach(v => {
+    sv("line", {x1:xs(v), x2:xs(v), y1:m.t + ph, y2:m.t + ph + 4, class:"pr-base"}, svg);
+    svText(svg, xs(v), m.t + ph + 19, cmp.format(v), null, "middle");
+  });
+  svText(svg, m.l + pw, H - 4, "Invitations in the draw (log scale)", "pr-axt", "end");
+  const pt = (n, v) => `${xs(n).toFixed(1)},${ys(v).toFixed(1)}`;
+  sv("polygon", {points:g.map(r => pt(r[0], r[3])).concat(g.slice().reverse().map(r => pt(r[0], r[2]))).join(" "), class:"pr-band"}, svg);
+  sv("polyline", {points:g.map(r => pt(r[0], r[1])).join(" "), class:"pr-line"}, svg);
+  const cross = sv("line", {x1:0, x2:0, y1:m.t, y2:m.t + ph, class:"pr-cross", visibility:"hidden"}, svg);
+  const ref = refLine(svg, you, ys, yd, m, pw, ph, "end");
+  const e = interp(g, cur.n), cx = xs(cur.n), cy = ys(e.point);
+  sv("line", {x1:cx, x2:cx, y1:cy + 5, y2:m.t + ph, class:"pr-drop"}, svg);
+  sv("circle", {cx:cx, cy:cy, r:5, class:"pr-dot"}, svg);
+  const anchor = cx < m.l + 16 ? "start" : cx > m.l + pw - 16 ? "end" : "middle";
+  const lab = svText(svg, cx + (anchor === "start" ? -3 : anchor === "end" ? 3 : 0), cy - 11 < 14 ? cy + 21 : cy - 11, nf.format(shown(e).point), "pr-lab", anchor);
+  const B = g.map(r => ({x:xs(r[0]), top:ys(r[3]), mid:ys(r[1]), bot:ys(r[2])}));
+  placeRef(ref, ["end", "start"], m, pw, ph, x => {
+    if (x < B[0].x - 3 || x > B[B.length - 1].x + 3) return [];
+    let k = 0;
+    while (k < B.length - 2 && x > B[k + 1].x) k++;
+    const a = B[k], b = B[k + 1], t = Math.max(0, Math.min(1, (x - a.x) / (b.x - a.x))), y = a.mid + t * (b.mid - a.mid);
+    // weights: light range band 1, estimate line 5, the marker with its drop line 10
+    const out = [[a.top + t * (b.top - a.top) - 3, a.bot + t * (b.bot - a.bot) + 3, 1], [y - 5, y + 5, 5]];
+    if (Math.abs(x - cx) < 7) out.push([cy - 9, m.t + ph, 10]);
+    return out;
+  }, [lab]);
+  const ring = sv("circle", {cx:0, cy:0, r:7, class:"pr-ring", visibility:"hidden"}, svg);
+  f.geom = {axis:"x", g:g, cross:cross, ring:ring, pts:g.map(r => ({x:xs(r[0]), y:ys(r[1])}))};
+}
+function tipCurve(f, i, how){
+  const r = f.geom.g[i], e = shown({point:r[1], low:r[2], high:r[3]});
+  return {head:`${nf.format(r[0])} invitations`, rows:[{key:"line", v:nf.format(e.point), l:"estimated cut-off"}, {key:"band", v:`${e.low}–${e.high}`, l:"likely range"}],
+    foot:r[0] === cur.n ? "Your setting" : how === "key" ? "Press Enter to use this number" : "Click or tap to use this number"};
+}
+function tableCurve(f){
+  const g = sc().grid, rows = g.map(r => ({n:r[0], e:{point:r[1], low:r[2], high:r[3]}}));
+  if (!g.some(r => r[0] === cur.n)){ rows.push({n:cur.n, e:interp(g, cur.n)}); rows.sort((a, b) => a.n - b.n); }
+  const tb = makeTable(`Estimated cut-off by number of invitations, ${cur.w.t.label}, ${scLabel(cur.w, cur.key)}`, ["Invitations", "Cut-off", "Likely range"], [true, true, true]);
+  rows.forEach(r => { const e = shown(r.e); addRow(tb, [r.n === cur.n ? chosen(nf.format(r.n)) : nf.format(r.n), nf.format(e.point), `${e.low}–${e.high}`], r.n === cur.n); });
+  clear(f.tbl);
+  f.tbl.appendChild(tb.table);
+}
+
+// ---------- chart B: past cut-offs ----------
+function pastDraws(id){
+  return (Array.isArray(D.recent_draws) ? D.recent_draws : [])
+    .filter(r => r && r.type === id && isNum(r.crs) && isNum(r.size) && isStr(r.number) && parseDate(r.date))
+    .map(r => ({r:r, d:parseDate(r.date)}))
+    .sort((a, b) => a.d - b.d);
+}
+function noDrawsText(w){
+  const L = w.t.last_draw, what = w.id === "general" ? "an all-program" : `${article(w.short)} ${w.short}`;
+  let s = `IRCC has not held ${what} draw in the last 12 months.`;
+  if (L && isStr(L.number) && parseDate(L.date) && isNum(L.size) && isNum(L.crs)) s += ` The last one was draw #${L.number} on ${dfLong.format(parseDate(L.date))}: ${nf.format(L.size)} invited, cut-off ${L.crs}.`;
+  if (w.t.hypothetical) s += " The estimate above is a what-if.";
+  return s;
+}
+function monthTicks(t0, t1, pw){
+  const per = pw / ((t1 - t0) / DAY / 30.44);
+  const step = [1, 2, 3, 4, 6, 12].filter(s => s * per >= 46)[0] || 12, out = [];
+  for (let d = new Date(t0.getFullYear(), t0.getMonth() + 1, 1); d <= t1; d = new Date(d.getFullYear(), d.getMonth() + 1, 1)){
+    if (d.getMonth() % step === 0) out.push(d);
+  }
+  return out;
+}
+function drawPast(f){
+  const w = cur.w, s0 = sc(), svg = f.svg, draws = pastDraws(w.id), empty = $("pr-past-empty");
+  clear(svg);
+  $("pr-past-leg").hidden = !draws.length;
+  f.btn.hidden = !draws.length;
+  f.plot.hidden = !draws.length;
+  empty.hidden = !!draws.length;
+  if (!draws.length){
+    empty.textContent = noDrawsText(w);
+    f.tbl.hidden = true;
+    f.geom = null;
+    return;
+  }
+  f.tbl.hidden = !f.tableOpen;
+  const W = Math.max(220, Math.floor(f.plot.clientWidth)), H = W < 440 ? 240 : 276;
+  const m = {l:42, r:40, t:22, b:30}, pw = W - m.l - m.r, ph = H - m.t - m.b;
+  frame(svg, W, H);
+  const raw = interp(s0.grid, cur.n), e = shown(raw), L = latestDraw();
+  const last = draws[draws.length - 1].d, latest = L ? parseDate(L.date) : last;
+  const ed = parseDate(s0.expected_date) || new Date(latest.getTime() + 14 * DAY);
+  let t0 = new Date(latest.getFullYear() - 1, latest.getMonth(), latest.getDate());
+  if (draws[0].d < t0) t0 = draws[0].d;
+  t0 = new Date(t0.getTime() - 8 * DAY);
+  const t1 = new Date(Math.max(ed, latest) + 10 * DAY);
+  const xs = d => m.l + (d - t0) / (t1 - t0) * pw;
+  let lo = Math.min(raw.low, ...draws.map(o => o.r.crs)), hi = Math.max(raw.high, ...draws.map(o => o.r.crs));
+  const pad = Math.max(2, (hi - lo) * 0.06);
+  lo -= pad; hi += pad;
+  const you = scoreFor(s0);
+  if (you != null && you >= lo - 45 && you <= hi + 45){ lo = Math.min(lo, you - 2); hi = Math.max(hi, you + 2); }
+  const yd = niceDomain(lo, hi, Math.max(3, Math.floor(ph / 40)));
+  const ys = v => m.t + (yd.max - v) / (yd.max - yd.min) * ph;
+  yd.ticks.forEach(v => {
+    sv("line", {x1:m.l, x2:m.l + pw, y1:ys(v), y2:ys(v), class:"pr-grid"}, svg);
+    svText(svg, m.l - 8, ys(v) + 4, nf.format(v), null, "end");
+  });
+  sv("line", {x1:m.l, x2:m.l + pw, y1:m.t + ph, y2:m.t + ph, class:"pr-base"}, svg);
+  // a month that appears at both ends of the axis gets its year on the first tick
+  const mt = monthTicks(t0, t1, pw), twice = mt.some((d, i) => mt.findIndex(x => x.getMonth() === d.getMonth()) !== i);
+  mt.forEach((d, i) => {
+    sv("line", {x1:xs(d), x2:xs(d), y1:m.t + ph, y2:m.t + ph + 4, class:"pr-base"}, svg);
+    svText(svg, xs(d), m.t + ph + 17, d.getMonth() === 0 ? String(d.getFullYear()) : i === 0 && twice ? dfMonY.format(d) : dfMon.format(d), null, "middle");
+  });
+  // New-rules view: mark the change, since cut-offs before it were on the old scale
+  const after = s0.rules === "after_nov3", chd = changeDate();
+  let mark = null;
+  if (after && chd && chd > t0 && chd < t1){
+    const mx = Math.round(xs(chd)) + 0.5;
+    sv("line", {x1:mx, x2:mx, y1:m.t - 4, y2:m.t + ph, class:"pr-mark"}, svg);
+    mark = svText(svg, mx, m.t - 8, `${changeShort()} rules change`, "pr-mlab", "middle");
+    const b = boxOf(mark);
+    if (b && b.x + b.width > W){ mark.setAttribute("x", W); mark.setAttribute("text-anchor", "end"); }
+    else if (b && b.x < m.l){ mark.setAttribute("x", m.l); mark.setAttribute("text-anchor", "start"); }
+  }
+  const pts = draws.map(o => ({x:xs(o.d), y:ys(o.r.crs), o:o}));
+  sv("polyline", {points:pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" "), class:"pr-line"}, svg);
+  const ex = xs(ed), ey = ys(raw.point), lp = pts[pts.length - 1];
+  // no dashed link from an old-rules cut-off to a new-rules estimate: it would read as a trend across the change
+  const linked = !(after && chd && lp.o.d < chd && ed >= chd);
+  if (linked) sv("line", {x1:lp.x, y1:lp.y, x2:ex, y2:ey, class:"pr-proj"}, svg);
+  sv("rect", {x:ex - 4, y:ys(raw.high), width:8, height:Math.max(3, ys(raw.low) - ys(raw.high)), rx:4, class:"pr-rbar"}, svg);
+  const cross = sv("line", {x1:0, x2:0, y1:m.t, y2:m.t + ph, class:"pr-cross", visibility:"hidden"}, svg);
+  const ref = refLine(svg, you, ys, yd, m, pw, ph, "start", after ? `Your score from ${changeShort()}` : "");
+  pts.forEach(p => sv("circle", {cx:p.x, cy:p.y, r:4, class:"pr-dot"}, svg));
+  sv("circle", {cx:ex, cy:ey, r:5, class:"pr-hollow"}, svg);
+  const txt = nf.format(e.point), fits = ex + 10 + txt.length * 13 * MONO_CH <= W;
+  const lab = svText(svg, fits ? ex + 10 : ex - 10, ey + 4, txt, "pr-lab", fits ? "start" : "end");
+  const all = linked ? pts.concat([{x:ex, y:ey}]) : pts, rTop = ys(raw.high), rBot = ys(raw.low);
+  placeRef(ref, ["start", "end"], m, pw, ph, x => {
+    // weights: past line and dots 3, the estimate with its range bar 10
+    const out = [];
+    for (let k = 0; k < all.length - 1; k++){
+      const a = all[k], b = all[k + 1];
+      if (x >= a.x - 7 && x <= b.x + 7){
+        const t = b.x > a.x ? Math.max(0, Math.min(1, (x - a.x) / (b.x - a.x))) : 0, y = a.y + t * (b.y - a.y);
+        out.push([y - 7, y + 7, 3]);
+      }
+    }
+    if (Math.abs(x - ex) <= 9) out.push([rTop - 3, rBot + 3, 10]);
+    return out;
+  }, mark ? [lab, mark] : [lab]);
+  const ring = sv("circle", {cx:0, cy:0, r:7, class:"pr-ring", visibility:"hidden"}, svg);
+  f.geom = {axis:"x", cross:cross, ring:ring, pts:pts.concat([{x:ex, y:ey, est:true, d:ed}])};
+}
+function tipPast(f, i){
+  const p = f.geom.pts[i];
+  if (p.est){
+    const e = shown(interp(sc().grid, cur.n));
+    return {head:sc().applies === false ? "Old rules estimate (comparison only)" : isScenario(sc()) ? `Scenario after ${changeShort()} · around ${day(p.d)}` : `Next draw estimate · around ${day(p.d)}`,
+      rows:[{key:"line", v:nf.format(e.point), l:"estimated cut-off"}, {key:"band", v:`${e.low}–${e.high}`, l:"likely range"}, {v:nf.format(cur.n), l:"invitations (your setting)"}]};
+  }
+  const r = p.o.r;
+  return {head:`Draw #${r.number} · ${day(p.o.d)}`, rows:[{key:"line", v:nf.format(r.crs), l:"cut-off"}, {v:nf.format(r.size), l:"invited"}]};
+}
+function tablePast(f){
+  const draws = pastDraws(cur.w.id);
+  clear(f.tbl);
+  f.tbl.hidden = !draws.length || !f.tableOpen;
+  if (!draws.length) return;
+  const tb = makeTable(`Past ${cur.w.t.label} cut-offs and the next estimate`, ["Draw", "Invited", "Cut-off"], [false, true, true]);
+  draws.forEach(o => addRow(tb, [twoLine(dfDayY.format(o.d), `#${o.r.number}`), nf.format(o.r.size), nf.format(o.r.crs)]));
+  const e = shown(interp(sc().grid, cur.n)), ed = parseDate(sc().expected_date);
+  addRow(tb, [twoLine(ed ? dfDayY.format(ed) : "Next draw", sc().applies === false ? "old rules, estimate" : isScenario(sc()) ? "new rules, scenario" : "next draw, estimate"),
+    twoLine(nf.format(cur.n), "chosen"), twoLine(nf.format(e.point), `${e.low}–${e.high}`)], true);
+  f.tbl.appendChild(tb.table);
+}
+function twoLine(main, sub){
+  const frag = document.createDocumentFragment();
+  frag.append(main, el("small", null, sub));
+  return frag;
+}
+
+// ---------- chart C: who is in the pool ----------
+function poolBands(){
+  const P = D.pool;
+  return P && Array.isArray(P.bands) ? P.bands.filter(b => b && isNum(b.lo) && isNum(b.hi) && isNum(b.count) && b.count >= 0) : [];
+}
+function bandLabel(b){ return isStr(b.band) ? b.band.replace("-", "–") : `${b.lo}–${b.hi}`; }
+// The published pool is on the old scale until IRCC rescores it after the change
+function poolScore(){
+  if (!score || !score.complete) return null;
+  const v = D.provenance && D.provenance.pool_rescored ? score.nov : score.today;
+  return isNum(v) ? v : null;
+}
+function roughCount(c){ return c >= 1000 ? Math.round(c / 100) * 100 : c >= 100 ? Math.round(c / 10) * 10 : Math.round(c); }
+function renderPoolText(){
+  const P = D.pool, cap = $("pr-pool-cap"), asOf = P && parseDate(P.as_of);
+  if (!P || !asOf || !isNum(P.total)) return;
+  $("pr-pool-sub").textContent = `Candidates by CRS score on ${dfLong.format(asOf)}, in IRCC's score bands. Bands are not the same width.`;
+  clear(cap);
+  cap.append(`On ${dfLong.format(asOf)}, ${nf.format(P.total)} people were in the pool.`);
+  const s = poolScore(), A = P.at_or_above;
+  if (s != null && A && isNum(A.from) && Array.isArray(A.values) && A.values.length){
+    const i = s - A.from, v = A.values;
+    const words = i < 0 ? "Almost all of them" : i >= v.length ? `Fewer than ${nf.format(roughCount(v[v.length - 1]))}` : `About ${nf.format(roughCount(v[i]))}`;
+    cap.append(" ", el("b", null, `${words} had a score at or above yours`), ` (${s}${D.provenance && D.provenance.pool_rescored ? "" : " today"}). IRCC publishes the pool in score bands; within the 501–600 band we estimate the spread.`);
+  }
+  if (isNum(P.invited_since_total)) cap.append(` ${nf.format(P.invited_since_total)} people were invited after that date.`);
+  if (s == null) cap.append(" Fill in the calculator above to see where you are.");
+}
+function drawPool(f){
+  const svg = f.svg, bands = poolBands(), W = Math.max(220, Math.floor(f.plot.clientWidth));
+  clear(svg);
+  const s = poolScore(), yi = s == null ? -1 : bands.findIndex(b => s >= b.lo && s <= b.hi);
+  const labs = bands.map(bandLabel), max = Math.max(1, ...bands.map(b => b.count));
+  const big = bands.findIndex(b => b.count === max);
+  const fs = 11.5, rowH = 26, bh = 14;
+  const m = {l:Math.ceil(Math.max(...labs.map((l, i) => l.length + (i === yi ? 4 : 0))) * fs * MONO_CH) + 12, r:Math.ceil(nf.format(max).length * 13 * MONO_CH) + 12, t:4, b:26};
+  const pw = W - m.l - m.r, H = m.t + bands.length * rowH + m.b, bottom = m.t + bands.length * rowH;
+  frame(svg, W, H);
+  const xs = c => m.l + c / max * pw;
+  const st = niceStep(max, Math.max(2, Math.floor(pw / 70)));
+  for (let v = 0; v <= max + 1e-9; v += st){
+    sv("line", {x1:xs(v), x2:xs(v), y1:m.t, y2:bottom, class:"pr-grid"}, svg);
+    svText(svg, xs(v), bottom + 17, v ? cmp.format(v) : "0", null, v ? "middle" : "start");
+  }
+  const rows = [];
+  bands.forEach((b, i) => {
+    const y = m.t + i * rowH, cy = y + rowH / 2, g = sv("g", {class:"pr-row" + (i === yi ? " you" : "")}, svg);
+    const t = svText(g, m.l - 10, cy + 4, "", null, "end");
+    if (i === yi){ const tsp = sv("tspan", {"font-weight":"700"}, t); tsp.textContent = "You "; }
+    t.appendChild(document.createTextNode(labs[i]));
+    const x1 = Math.max(m.l + 1, xs(b.count)), r = Math.min(4, (x1 - m.l) / 2);
+    sv("path", {d:`M${m.l},${cy - bh / 2}H${x1 - r}Q${x1},${cy - bh / 2} ${x1},${cy - bh / 2 + r}V${cy + bh / 2 - r}Q${x1},${cy + bh / 2} ${x1 - r},${cy + bh / 2}H${m.l}Z`, class:"pr-bar" + (i === yi ? " you" : "")}, g);
+    if (i === yi || i === big) svText(g, x1 + 6, cy + 4, nf.format(b.count), "pr-lab", "start");
+    rows.push(g);
+  });
+  sv("line", {x1:m.l, x2:m.l, y1:m.t, y2:bottom, class:"pr-base"}, svg);
+  f.geom = {axis:"y", rows:rows, you:yi, pts:bands.map((b, i) => ({x:xs(b.count), y:m.t + i * rowH + rowH / 2, b:b}))};
+}
+function tipPool(f, i){
+  const b = f.geom.pts[i].b, total = D.pool && isNum(D.pool.total) && D.pool.total > 0 ? D.pool.total : null;
+  const rows = [{v:nf.format(b.count), l:"candidates"}];
+  if (total) rows.push({v:`${nf1.format(b.count / total * 100)}%`, l:"of the pool"});
+  return {head:`${bandLabel(b)} points`, rows:rows, foot:i === f.geom.you ? "Your score is in this band" : ""};
+}
+function tablePool(f){
+  const bands = poolBands(), s = poolScore(), total = D.pool && isNum(D.pool.total) ? D.pool.total : 0;
+  const tb = makeTable("Candidates in the pool by score band", ["Score band", "Candidates", "Share"], [false, true, true]);
+  bands.forEach(b => { const you = s != null && s >= b.lo && s <= b.hi; addRow(tb, [you ? chosen(bandLabel(b), "you") : bandLabel(b), nf.format(b.count), total ? `${nf1.format(b.count / total * 100)}%` : "–"], you); });
+  clear(f.tbl);
+  f.tbl.appendChild(tb.table);
+}
+
+// ---------- tables, tooltips, rendering ----------
+function makeTable(caption, heads, numeric){
+  const table = el("table", "bd"), cap = el("caption", "sr", caption), thead = el("thead"), tr = el("tr"), tbody = el("tbody");
+  heads.forEach((h, i) => { const th = el("th", numeric[i] ? "n" : null, h); th.scope = "col"; tr.appendChild(th); });
+  thead.appendChild(tr);
+  table.append(cap, thead, tbody);
+  return {table:table, tbody:tbody, numeric:numeric};
+}
+function addRow(tb, cells, on){
+  const tr = el("tr", on ? "on" : null);
+  cells.forEach((c, i) => {
+    const td = el("td", tb.numeric[i] ? "n" : null);
+    if (typeof c === "string") td.textContent = c; else td.appendChild(c);
+    tr.appendChild(td);
+  });
+  tb.tbody.appendChild(tr);
+}
+// A table cell value marked as the visitor's own (row highlight plus a short tag, so not by colour alone)
+function chosen(text, tag){
+  const frag = document.createDocumentFragment();
+  frag.append(el("span", "tag pr-mine", tag || "chosen"), text);
+  return frag;
+}
+function makeFig(name, draw, tipFor, table, opts){
+  const f = {name:name, el:$("pr-" + name), plot:$("pr-" + name + "-plot"), live:$("pr-" + name + "-live"), tbl:$("pr-" + name + "-tbl"),
+    draw:draw, tipFor:tipFor, table:table, activate:opts.activate, focusIndex:opts.focusIndex,
+    visible:false, dirty:true, w:-1, i:-1, ptr:false, geom:null, tableOpen:false};
+  f.svg = f.plot.querySelector("svg");
+  f.tip = f.plot.querySelector(".pr-tip");
+  f.btn = f.el.querySelector(".pr-tbtn");
+  f.btn.addEventListener("click", () => {
+    f.tableOpen = !f.tableOpen;
+    f.btn.setAttribute("aria-expanded", String(f.tableOpen));
+    f.btn.textContent = f.tableOpen ? "Hide table" : "Show as table";
+    f.tbl.hidden = !f.tableOpen;
+    if (f.tableOpen) f.table(f);
+  });
+  bindFig(f);
+  figs[name] = f;
+}
+function bindFig(f){
+  const p = f.plot;
+  const at = e => { const r = p.getBoundingClientRect(); return {x:e.clientX - r.left, y:e.clientY - r.top}; };
+  p.addEventListener("pointermove", e => { if (!f.geom) return; f.ptr = true; showAt(f, pick(f, at(e)), "ptr"); });
+  p.addEventListener("pointerdown", e => { if (!f.geom) return; f.ptr = true; showAt(f, pick(f, at(e)), "ptr"); });
+  p.addEventListener("pointerleave", e => { f.ptr = false; if (e.pointerType !== "touch" && document.activeElement !== p) hideTip(f); });
+  p.addEventListener("focus", () => {
+    let kb = true;
+    try { kb = p.matches(":focus-visible"); } catch (err) {}
+    if (kb && f.geom) showAt(f, f.focusIndex(f), "key");
+  });
+  p.addEventListener("blur", () => { if (!f.ptr) hideTip(f); });
+  p.addEventListener("keydown", e => {
+    if (!f.geom) return;
+    const n = f.geom.pts.length;
+    let i = f.i < 0 ? f.focusIndex(f) : f.i;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") i = Math.min(n - 1, i + 1);
+    else if (e.key === "ArrowLeft" || e.key === "ArrowUp") i = Math.max(0, i - 1);
+    else if (e.key === "Home") i = 0;
+    else if (e.key === "End") i = n - 1;
+    else if ((e.key === "Enter" || e.key === " ") && f.activate){ e.preventDefault(); f.i = i; f.activate(i); return; }
+    else if (e.key === "Escape"){ hideTip(f); return; }
+    else return;
+    e.preventDefault();
+    showAt(f, i, "key");
+  });
+  if (f.activate) p.addEventListener("click", e => { if (f.geom) f.activate(pick(f, at(e))); });
+}
+function pick(f, pt){
+  const pts = f.geom.pts;
+  let best = 0;
+  for (let i = 1; i < pts.length; i++){
+    if (f.geom.axis === "y" ? Math.abs(pts[i].y - pt.y) < Math.abs(pts[best].y - pt.y) : Math.abs(pts[i].x - pt.x) < Math.abs(pts[best].x - pt.x)) best = i;
+  }
+  return best;
+}
+function showAt(f, i, how){
+  const G = f.geom;
+  if (!G || i < 0 || i >= G.pts.length) return;
+  f.i = i;
+  const p = G.pts[i];
+  if (G.cross){ G.cross.setAttribute("x1", p.x); G.cross.setAttribute("x2", p.x); G.cross.setAttribute("visibility", "visible"); }
+  if (G.ring){ G.ring.setAttribute("cx", p.x); G.ring.setAttribute("cy", p.y); G.ring.setAttribute("visibility", "visible"); }
+  if (G.rows) G.rows.forEach((r, k) => r.classList.toggle("on", k === i));
+  const spec = f.tipFor(f, i, how), tip = f.tip;
+  clear(tip);
+  if (spec.head) tip.appendChild(el("div", "hd", spec.head));
+  const keyed = spec.rows.some(r => r.key);
+  spec.rows.forEach(r => {
+    const row = el("div", "r");
+    if (keyed) row.appendChild(el("span", "key" + (!r.key ? " none" : r.key === "line" ? "" : " " + r.key)));
+    row.append(el("span", "v", r.v), el("span", "l", r.l));
+    tip.appendChild(row);
+  });
+  if (spec.foot) tip.appendChild(el("div", "ft", spec.foot));
+  tip.hidden = false;
+  const bw = f.plot.clientWidth, tw = tip.offsetWidth, th = tip.offsetHeight;
+  let left = p.x + 14, top = p.y - th - 12;
+  if (left + tw > bw) left = p.x - 14 - tw;
+  if (left < 0) left = Math.max(0, Math.min(bw - tw, p.x - tw / 2));
+  if (top < -6) top = p.y + 14;
+  tip.style.transform = `translate(${Math.round(left)}px,${Math.round(top)}px)`;
+  if (how === "key") say(f, [spec.head].concat(spec.rows.map(r => `${r.v} ${r.l}`)).join(", "));
+}
+function hideTip(f){
+  f.i = -1;
+  const G = f.geom;
+  if (G){
+    if (G.cross) G.cross.setAttribute("visibility", "hidden");
+    if (G.ring) G.ring.setAttribute("visibility", "hidden");
+    if (G.rows) G.rows.forEach(r => r.classList.remove("on"));
+  }
+  f.tip.hidden = true;
+}
+function say(f, text){ if (f.live) f.live.textContent = text; }
+
+let raf = 0;
+function invalidate(names){ names.forEach(n => { if (figs[n]){ figs[n].dirty = true; figs[n].tdirty = true; } }); schedule(); }
+function schedule(){ if (!raf) raf = requestAnimationFrame(flush); }
+// Charts redraw only near the viewport; an open table is cheap text and always stays current
+function flush(){
+  raf = 0;
+  Object.keys(figs).forEach(k => {
+    const f = figs[k];
+    if (root.hidden || f.el.hidden) return;
+    try {
+      if (f.dirty && f.visible){
+        f.dirty = false;
+        const keep = f.i >= 0 && (f.ptr || document.activeElement === f.plot) ? f.i : -1;
+        f.draw(f);
+        f.w = f.plot.clientWidth;
+        if (keep >= 0 && f.geom) showAt(f, Math.min(keep, f.geom.pts.length - 1), "keep");
+        else hideTip(f);
+      }
+      if (f.tdirty && f.tableOpen){ f.tdirty = false; f.table(f); }
+    } catch (err) {
+      f.el.hidden = true;
+      if (window.console) console.error(err);
+    }
+  });
+}
+// Draw a chart only once it is near the viewport, and again when its width changes
+function watch(){
+  const list = Object.keys(figs).map(k => figs[k]);
+  if ("IntersectionObserver" in window){
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(en => { list.forEach(f => { if (f.el === en.target) f.visible = en.isIntersecting; }); });
+      schedule();
+    }, {rootMargin:"300px 0px"});
+    list.forEach(f => io.observe(f.el));
+  } else list.forEach(f => { f.visible = true; });
+  let tm = 0;
+  const resized = () => { clearTimeout(tm); tm = setTimeout(() => { list.forEach(f => { if (f.plot.clientWidth !== f.w) f.dirty = true; }); schedule(); }, 120); };
+  if ("ResizeObserver" in window){ const ro = new ResizeObserver(resized); list.forEach(f => ro.observe(f.plot)); }
+  else window.addEventListener("resize", resized);
+  schedule();
+}
+
+// ---------- background: quota and method ----------
+function tile(k, v, s){
+  const t = el("div", "pr-tile");
+  t.append(el("span", "k", k), el("span", "v", v));
+  if (s) t.appendChild(el("span", "s", s));
+  return t;
+}
+function buildQuota(){
+  const Q = D.quota, box = $("pr-quota");
+  if (!Q || !isNum(Q.invited_ytd) || !isNum(Q.draws_ytd)){ box.hidden = true; return; }
+  const yr = isNum(Q.year) ? Q.year : today.getFullYear(), F = Q.facts || {}, tiles = $("pr-tiles");
+  $("pr-quota-h").textContent = `Invitations in ${yr}`;
+  clear(tiles);
+  const prev = (Array.isArray(Q.same_period_previous_years) ? Q.same_period_previous_years : []).filter(x => x && x.year === yr - 1 && isNum(x.invited))[0];
+  const thr = parseDate(Q.through);
+  tiles.appendChild(tile("So far", nf.format(Q.invited_ytd), `invitations in ${nf.format(Q.draws_ytd)} draws of all types${thr ? ` to ${day(thr)}` : ""}.${prev ? ` Same period in ${prev.year}: ${nf.format(prev.invited)}.` : ""}`));
+  const tgt = (Array.isArray(F.targets) ? F.targets : []).filter(x => x && x.id === "fhs" && x.year === yr && !x.notional && isNum(x.target))[0];
+  if (tgt) tiles.appendChild(tile("Admissions target", nf.format(tgt.target), `Admissions, not invitations: Federal High Skilled (CEC, FSW, FST) in ${yr}${isNum(tgt.low) && isNum(tgt.high) ? `, range ${nf.format(tgt.low)} to ${nf.format(tgt.high)}` : ""}.`));
+  const R = Q.rest_of_year;
+  if (R && isNum(R.expected_cycles)){
+    const c = Math.round(R.expected_cycles);
+    if (c >= 1 && isNum(R.invited_estimate)) tiles.appendChild(tile("Rest of the year", nf.format(R.invited_estimate), `more invitations, a rough estimate from about ${c} more draw cycle${c === 1 ? "" : "s"}${isNum(R.invited_low) && isNum(R.invited_high) ? ` (range ${nf.format(R.invited_low)} to ${nf.format(R.invited_high)})` : ""}.`));
+    else tiles.appendChild(tile("Rest of the year", "Few or none", "No more regular draw cycles are expected this year."));
+  }
+  const pol = $("pr-policy");
+  clear(pol);
+  pol.append("IRCC says it invites only as many people as it needs to meet the targets in its ", link(F.plan_url, isStr(F.plan) ? F.plan : "Immigration Levels Plan"),
+    `. Category draws (French, healthcare, trades and others) count toward the same targets; they are not extra places. People are usually admitted 7 to 10 months after an invitation, so late-${yr} invitations mostly count toward ${yr + 1}.`);
+  const by = (Array.isArray(Q.invited_ytd_by_type) ? Q.invited_ytd_by_type : []).filter(x => x && isStr(x.label) && isNum(x.invited));
+  const bl = $("pr-blist");
+  clear(bl);
+  if (!by.length){ bl.hidden = true; return; }
+  const max = Math.max(1, ...by.map(x => x.invited)), tb = el("tbody");
+  bl.appendChild(el("caption", null, `${yr} invitations by draw type`));
+  by.forEach(x => {
+    const w = types.filter(t => t.id === x.type)[0];
+    const tr = el("tr"), th = el("th", null, w ? w.short : x.label), bar = el("span", "bar"), td = el("td");
+    if (w && w.short !== x.label) th.title = x.label;
+    th.scope = "row";
+    bar.style.width = `${(x.invited / max * 100).toFixed(2)}%`;
+    td.appendChild(bar);
+    tr.append(th, td, el("td", "n", nf.format(x.invited)));
+    tb.appendChild(tr);
+  });
+  bl.appendChild(tb);
+}
+function buildHow(){
+  const body = $("pr-how-body"), B = D.backtest || {}, A = B.all || {}, P = D.pool || {}, L = latestDraw();
+  clear(body);
+  body.appendChild(el("p", null, "Three models make each estimate: a queue model of each draw type's eligible candidates, a pool model built on IRCC's published score distribution, and a statistical model of past cut-offs. Each was tested on past draws, and the page shows the middle value of the three."));
+  if (isNum(A.coverage) && isNum(A.n)){
+    body.appendChild(el("p", null, `The likely range is set so that, when we tested the method on past draws, the real cut-off fell inside it about ${Math.round(A.coverage * 10)} times in 10 (${Math.round(A.coverage * 100)}% of ${A.n} draws in the last 12 months).` +
+      (isNum(A.mae) && isNum(A.baseline_last_mae) ? ` Overall, estimates were off by ${nf1.format(A.mae)} points on average, against ${nf1.format(A.baseline_last_mae)} for simply repeating the last cut-off.` : "")));
+  }
+  const withBt = types.filter(w => w.t.backtest && isNum(w.t.backtest.n) && w.t.backtest.n > 0 && isNum(w.t.backtest.mae));
+  if (withBt.length){
+    const tb = makeTable("Accuracy by draw type", ["Draw type", "Average error", "Repeating the last cut-off", "Inside the range"], [false, true, true, true]);
+    tb.table.querySelector("caption").className = "";
+    withBt.forEach(w => {
+      const b = w.t.backtest;
+      addRow(tb, [twoLine(w.short, `${nf.format(b.n)} draw${b.n === 1 ? "" : "s"} tested`), nf1.format(b.mae), isNum(b.baseline_last_mae) ? nf1.format(b.baseline_last_mae) : "–", isNum(b.coverage) ? `${Math.round(b.coverage * 100)}%` : "–"]);
+    });
+    const wrap = el("div", "tablewrap pr-tbl");
+    wrap.appendChild(tb.table);
+    body.appendChild(wrap);
+  }
+  const lim = el("ul");
+  ["IRCC decides the type, size and date of every draw and can change them at any time.",
+   "The numbers for draws after the November 3 change are a reasoned scenario, not an estimate from past draws: IRCC has not said how many candidates gain points.",
+   "Small categories (senior managers, physicians, transport and trades) have very few past draws, so treat their estimates as rough.",
+   "PNP cut-offs depend on the lowest-scoring nominee and vary a lot from draw to draw."].forEach(s => lim.appendChild(el("li", null, s)));
+  body.append(el("p", "fine", "Limits"), lim);
+  const data = el("p");
+  data.append("Data: IRCC rounds of invitations");
+  if (L) data.append(", latest draw ", link(L.url, `#${L.number}`), ` on ${dfLong.format(parseDate(L.date))}`);
+  if (parseDate(P.as_of)) data.append(`; pool as of ${dfLong.format(parseDate(P.as_of))}`);
+  data.append(". Statistics Canada does not publish Express Entry draw data. Updated automatically a few times a day.");
+  body.append(data, el("p", "fine", "Estimates only. Do not base immigration decisions on this page alone."));
+}
+
+// ---------- start: after the calculator has drawn ----------
+function start(){
+  fetch("data/draws.json", {cache:"no-cache"})
+    .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+    .then(d => { if (!d || d.schema !== 1) throw new Error("unsupported draws.json schema"); setup(d); })
+    .catch(() => { root.hidden = true; });
+}
+if (window.requestIdleCallback) requestIdleCallback(start, {timeout:1200}); else setTimeout(start, 0);
 })();
 </script>
 

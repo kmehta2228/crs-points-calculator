@@ -1,0 +1,88 @@
+name: Update draw data
+
+on:
+  schedule:
+    # IRCC posts a round 1 to 8 hours after running it (median 3.5 h in 2026), on weekdays,
+    # between about 8:30 a.m. and 4:15 p.m. Toronto time. Cron times are UTC and stay off the
+    # top of the hour, when GitHub delays or drops scheduled runs under load.
+    - cron: "17 15 * * 1-5" # 11:17 a.m. EDT / 10:17 a.m. EST
+    - cron: "47 17 * * 1-5" # 1:47 p.m. EDT / 12:47 p.m. EST
+    - cron: "47 20 * * *" # 4:47 p.m. EDT / 3:47 p.m. EST, every day
+  workflow_dispatch:
+
+permissions:
+  contents: write # commit site/data/draws.json
+  actions: write # start deploy-pages.yml; pushes made with GITHUB_TOKEN start no workflows
+  issues: write # report repeated failures
+
+concurrency:
+  group: update-draws
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Fetch IRCC rounds and rebuild site/data/draws.json
+        id: data
+        # Exits 1 and changes nothing when the download or the data looks wrong.
+        run: python3 -I .github/scripts/update_draws.py
+
+      - name: Commit the new data
+        if: steps.data.outputs.changed == 'true'
+        env:
+          LATEST: ${{ steps.data.outputs.latest }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/draws.json
+          git commit -m "Update draw data to round $LATEST"
+          for attempt in 1 2 3; do
+            if git pull --rebase origin main && git push origin HEAD:main; then
+              exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            sleep $((attempt * 20))
+          done
+          echo "::error::Could not push the new draw data"
+          exit 1
+
+      - name: Check that the live site serves this data
+        id: live
+        if: steps.data.outputs.changed != 'true'
+        env:
+          SITE_DATA_URL: https://kmehta2228.github.io/crs-points-calculator/data/draws.json
+        run: |
+          # The query string skips the Pages cache. A missing or different file means an
+          # earlier data commit was never deployed.
+          if curl -fsSL --max-time 30 -o "$RUNNER_TEMP/live-draws.json" "$SITE_DATA_URL?run=$GITHUB_RUN_ID" &&
+            cmp -s "$RUNNER_TEMP/live-draws.json" site/data/draws.json; then
+            echo "stale=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "stale=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Redeploy the site
+        if: steps.data.outputs.changed == 'true' || steps.live.outputs.stale == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh workflow run deploy-pages.yml --ref main
+
+      - name: Open an issue after three failed runs in a row
+        if: failure() && github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          earlier=$(gh run list --workflow update-draws.yml --event schedule --status completed --limit 2 \
+            --json conclusion --jq '[.[] | select(.conclusion == "failure")] | length')
+          open=$(gh issue list --state open --search 'in:title "Draw data update is failing"' --json number --jq 'length')
+          if [ "$earlier" -ge 2 ] && [ "$open" -eq 0 ]; then
+            gh issue create --title "Draw data update is failing" \
+              --body "The last three scheduled runs could not refresh site/data/draws.json, so the site still shows the last good data. The ::error:: line in the run log says why (for example an incomplete download, or IRCC changed the score bands on its rounds page). Latest failed run: $RUN_URL"
+          fi

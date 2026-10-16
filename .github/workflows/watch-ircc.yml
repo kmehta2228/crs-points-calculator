@@ -19,6 +19,13 @@ jobs:
         id: check
         run: python3 .github/scripts/check_ircc.py
 
+      # Before the push, so a failed push can't swallow the issue.
+      - name: Open an issue
+        if: steps.check.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh issue create --title "IRCC updated a page the calculator uses" --body-file ircc-changes.md
+
       - name: Save the new snapshot
         run: |
           if [ -n "$(git status --porcelain .github/ircc-snapshot.json)" ]; then
@@ -26,11 +33,14 @@ jobs:
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add .github/ircc-snapshot.json
             git commit -m "Update IRCC page snapshot"
-            git push
+            # update-draws.yml also pushes to main; rebase onto it and retry.
+            for attempt in 1 2 3; do
+              if git pull --rebase origin main && git push origin HEAD:main; then
+                exit 0
+              fi
+              git rebase --abort 2>/dev/null || true
+              sleep $((attempt * 20))
+            done
+            echo "::error::Could not push the new snapshot"
+            exit 1
           fi
-
-      - name: Open an issue
-        if: steps.check.outputs.changed == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh issue create --title "IRCC updated a page the calculator uses" --body-file ircc-changes.md
