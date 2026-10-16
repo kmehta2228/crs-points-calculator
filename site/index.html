@@ -117,6 +117,7 @@ select:focus-visible,input:focus-visible,button:focus-visible,summary:focus-visi
 .cell label{font-size:14px;font-weight:700}
 .lvl{justify-self:start;font-family:var(--f-mono);font-size:12.5px;font-weight:600;padding:2px 7px;border-radius:6px;background:var(--accent-soft);color:var(--accent);font-variant-numeric:tabular-nums}
 .lvl.miss{background:transparent;color:var(--muted);padding-left:0}
+.scores-note{grid-column:1/-1}
 .warn{margin:0;font-size:14px;font-weight:700;color:var(--note)}
 .applied{margin:0;font-size:14px;font-weight:700;color:var(--gain)}
 
@@ -395,7 +396,7 @@ table.bd{width:100%;border-collapse:collapse;font-size:14.5px}
       <li><a href="https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/changes.html" target="_blank" rel="noopener">2026 changes to points for Canadian work experience and job offers</a></li>
       <li><a href="https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/check-score/crs-criteria.html" target="_blank" rel="noopener">CRS criteria</a></li>
       <li><a href="https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/check-score/high-wage.html" target="_blank" rel="noopener">High-wage occupations list</a></li>
-      <li><a href="https://www.canada.ca/en/immigration-refugees-citizenship/corporate/publications-manuals/operational-bulletins-manuals/standard-requirements/language-requirements/test-equivalency-charts.html" target="_blank" rel="noopener">Language test equivalency charts</a></li>
+      <li><a href="https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/documents/language-test.html" target="_blank" rel="noopener">Express Entry language test results</a></li>
       <li><a href="https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/find-national-occupation-code.html" target="_blank" rel="noopener">Find your NOC code</a></li>
     </ul>
   </footer>
@@ -413,7 +414,7 @@ const TESTS = {
   celpip:{name:"CELPIP-General", short:"CELPIP", lang:"en", kind:"celpip"},
   pte:{name:"PTE Core", short:"PTE Core", lang:"en", kind:"num", range:{L:[10,90],R:[10,90],W:[10,90],S:[10,90]}},
   clb:{name:"I know my CLB levels", short:"CLB", lang:"en", kind:"level"},
-  tef:{name:"TEF Canada (taken after Dec 10, 2023)", short:"TEF Canada", lang:"fr", kind:"num", range:{L:[0,699],R:[0,699],W:[0,699],S:[0,699]}},
+  tef:{name:"TEF Canada (Équivalence ancien score)", short:"TEF Canada", lang:"fr", kind:"num", range:{L:[0,360],R:[0,300],W:[0,450],S:[0,450]}},
   tcf:{name:"TCF Canada", short:"TCF Canada", lang:"fr", kind:"num", range:{L:[100,699],R:[100,699],W:[0,20],S:[0,20]}},
   nclc:{name:"I know my NCLC levels", short:"NCLC", lang:"fr", kind:"level"}
 };
@@ -427,10 +428,11 @@ const BANDS = {
        R:[[88,10],[78,9],[69,8],[60,7],[51,6],[42,5],[33,4],[24,3]],
        W:[[90,10],[88,9],[79,8],[69,7],[60,6],[51,5],[41,4],[32,3]],
        S:[[89,10],[84,9],[76,8],[68,7],[59,6],[51,5],[42,4],[34,3]]},
-  tef:{L:[[546,10],[503,9],[462,8],[434,7],[393,6],[352,5],[306,4]],
-       R:[[546,10],[503,9],[462,8],[434,7],[393,6],[352,5],[306,4]],
-       W:[[558,10],[512,9],[472,8],[428,7],[379,6],[330,5],[268,4]],
-       S:[[556,10],[518,9],[494,8],[456,7],[422,6],[387,5],[328,4]]},
+  // TEF Canada uses the "Équivalence ancien score" column, which is what Express Entry asks for
+  tef:{L:[[316,10],[298,9],[280,8],[249,7],[217,6],[181,5],[145,4]],
+       R:[[263,10],[248,9],[233,8],[207,7],[181,6],[151,5],[121,4]],
+       W:[[393,10],[371,9],[349,8],[310,7],[271,6],[226,5],[181,4]],
+       S:[[393,10],[371,9],[349,8],[310,7],[271,6],[226,5],[181,4]]},
   tcf:{L:[[549,10],[523,9],[503,8],[458,7],[398,6],[369,5],[331,4]],
        R:[[549,10],[524,9],[499,8],[453,7],[406,6],[375,5],[342,4]],
        W:[[16,10],[14,9],[12,8],[10,7],[7,6],[6,5],[4,4]],
@@ -852,7 +854,8 @@ function renderCells(base){
   const t = TESTS[l.test];
   const idBase = base.replace(".", "-");
   const pre = t.lang === "fr" ? "NCLC" : "CLB";
-  box.innerHTML = SKILLS.map(s => {
+  const note = l.test === "tef" ? '<p class="help scores-note">Enter the numbers from the "Équivalence ancien score" column of your TEF results. That is the column IRCC uses for Express Entry.</p>' : "";
+  box.innerHTML = note + SKILLS.map(s => {
     const id = `${idBase}-${s}`, path = `${base}.${s}`;
     let control;
     if (t.kind === "num"){

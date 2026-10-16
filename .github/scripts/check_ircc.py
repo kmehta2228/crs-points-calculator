@@ -18,7 +18,7 @@ PAGES = {
     "CRS criteria": "https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/check-score/crs-criteria.html",
     "High-wage occupations list": "https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/check-score/high-wage.html",
     "2026 changes to CRS points": "https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/changes.html",
-    "Language test equivalency charts": "https://www.canada.ca/en/immigration-refugees-citizenship/corporate/publications-manuals/operational-bulletins-manuals/standard-requirements/language-requirements/test-equivalency-charts.html",
+    "Express Entry language test results": "https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/documents/language-test.html",
 }
 SNAPSHOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "ircc-snapshot.json")
 ISSUE_BODY = "ircc-changes.md"
