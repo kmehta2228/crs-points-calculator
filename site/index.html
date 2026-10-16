@@ -1,0 +1,1106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>CRS Points Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: one column of answer groups; the score docks to the bottom edge on phones and becomes a sticky side panel from 960px */
+:root{
+  --bg:#F3F4F8;
+  --surface:#FFFFFF;
+  --field:#FFFFFF;
+  --ink:#161A2C;
+  --muted:#585D77;
+  --rule:#D9DCE8;
+  --accent:#3B36A6;        /* stamp ink */
+  --accent-soft:#ECEBFA;
+  --on-accent:#FFFFFF;
+  --gain:#08714F;
+  --gain-soft:#DDF1E7;
+  --note:#875200;
+  --note-soft:#FAEFD9;
+  --shadow:0 1px 0 rgba(22,26,44,.05),0 10px 28px -14px rgba(22,26,44,.22);
+  --shadow-bar:0 10px 24px -18px rgba(22,26,44,.35);
+  --f-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible","Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1017;
+    --surface:#171A26;
+    --field:#10121B;
+    --ink:#E8E9F3;
+    --muted:#A3A7C0;
+    --rule:#2B2F44;
+    --accent:#ABA6FF;
+    --accent-soft:#25234B;
+    --on-accent:#14123A;
+    --gain:#4BD3A0;
+    --gain-soft:#0F2E21;
+    --note:#F0B55E;
+    --note-soft:#33260F;
+    --shadow:0 1px 0 rgba(0,0,0,.35),0 12px 30px -14px rgba(0,0,0,.8);
+    --shadow-bar:0 10px 24px -16px rgba(0,0,0,.9);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1017;
+  --surface:#171A26;
+  --field:#10121B;
+  --ink:#E8E9F3;
+  --muted:#A3A7C0;
+  --rule:#2B2F44;
+  --accent:#ABA6FF;
+  --accent-soft:#25234B;
+  --on-accent:#14123A;
+  --gain:#4BD3A0;
+  --gain-soft:#0F2E21;
+  --note:#F0B55E;
+  --note-soft:#33260F;
+  --shadow:0 1px 0 rgba(0,0,0,.35),0 12px 30px -14px rgba(0,0,0,.8);
+  --shadow-bar:0 10px 24px -16px rgba(0,0,0,.9);
+  color-scheme:dark;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap-top{padding-block:20px 0}
+.wrap-main{padding-block:18px 88px}
+a{color:var(--accent);text-underline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+.top{display:grid;gap:10px;padding-block:8px 18px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(30px,7vw,44px);line-height:1.02;letter-spacing:-.015em;margin:0;text-wrap:balance}
+.lede{margin:0;color:var(--muted);max-width:62ch}
+.disclaimer{justify-self:start;margin:2px 0 0;font-size:13.5px;font-weight:700;color:var(--muted);border:1px solid var(--rule);border-radius:999px;padding:4px 12px;line-height:1.4}
+.layout{display:grid;gap:28px}
+form{display:grid;min-width:0}
+.banner{display:flex;flex-wrap:wrap;gap:4px 8px;background:var(--note-soft);border-radius:12px;padding:12px 14px;font-size:15px;margin-bottom:6px}
+.banner b{color:var(--note)}
+
+.group{display:grid;gap:18px;padding-block:22px;border-top:1px solid var(--rule);min-width:0}
+.group:first-of-type{border-top:0;padding-top:8px}
+.group h2{font-family:var(--f-display);font-weight:600;font-size:22px;line-height:1.2;margin:0;letter-spacing:-.005em;text-wrap:balance}
+.group h2 small{display:block;font-family:var(--f-body);font-weight:400;font-size:14px;color:var(--muted);letter-spacing:0;margin-top:3px}
+.row{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))}
+.field{display:grid;gap:7px;align-content:start;min-width:0}
+.field>label,.field .label{font-weight:700;font-size:15px;line-height:1.35}
+.help{margin:0;font-size:14px;color:var(--muted);line-height:1.45;max-width:62ch}
+
+.select{position:relative;min-width:0}
+.select::after{content:"";position:absolute;right:16px;top:50%;width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+select,input[type=number],input[type=search]{width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--field);border:1px solid var(--rule);border-radius:10px;min-height:46px;padding:10px 12px}
+select{appearance:none;-webkit-appearance:none;padding-right:40px;cursor:pointer;text-overflow:ellipsis}
+input[type=search]{-webkit-appearance:none;appearance:none}
+input::placeholder{color:var(--muted);opacity:.85}
+select:focus-visible,input:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.seg{display:grid;grid-template-columns:1fr 1fr;width:min(100%,220px);padding:3px;border:1px solid var(--rule);border-radius:11px;background:var(--field)}
+.seg input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.seg label{display:block;text-align:center;padding:8px 10px;border-radius:8px;font-weight:700;color:var(--muted);cursor:pointer;user-select:none}
+.seg input:checked+label{background:var(--accent);color:var(--on-accent)}
+.seg input:focus-visible+label{outline:2px solid var(--accent);outline-offset:2px}
+
+.scores{display:grid;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (min-width:640px){.scores{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.cell{display:grid;gap:6px;align-content:start;min-width:0}
+.cell label{font-size:14px;font-weight:700}
+.lvl{justify-self:start;font-family:var(--f-mono);font-size:12.5px;font-weight:600;padding:2px 7px;border-radius:6px;background:var(--accent-soft);color:var(--accent);font-variant-numeric:tabular-nums}
+.lvl.miss{background:transparent;color:var(--muted);padding-left:0}
+.warn{margin:0;font-size:14px;font-weight:700;color:var(--note)}
+.applied{margin:0;font-size:14px;font-weight:700;color:var(--gain)}
+
+details.lookup{border:1px dashed var(--rule);border-radius:12px;padding:0 12px;min-width:0}
+details.lookup[open]{padding-bottom:12px;display:grid}
+details.lookup summary{cursor:pointer;padding:10px 0;font-weight:700;font-size:15px;color:var(--accent)}
+.hits{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}
+.hits:empty{display:none}
+.hit{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;text-align:left;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:9px 11px;cursor:pointer}
+.hit:hover{border-color:var(--accent)}
+.hit .code{font-family:var(--f-mono);font-size:13px;font-weight:600;color:var(--muted);padding-top:2px}
+.hit .t{font-size:15px;line-height:1.35}
+.hit .tier{grid-column:2;font-family:var(--f-mono);font-size:12.5px;font-weight:600;color:var(--accent)}
+.lookup-msg{margin:10px 0 0;font-size:14px;color:var(--muted)}
+
+.results{min-width:0;scroll-margin-top:calc(76px + env(safe-area-inset-top,0px))}
+.panel{background:var(--surface);border:1px solid var(--rule);border-radius:16px;box-shadow:var(--shadow);padding:18px;display:grid;gap:16px;min-width:0}
+.panel h2{font-family:var(--f-display);font-weight:600;font-size:22px;margin:0}
+.totals{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.total{display:grid;gap:3px;align-content:start;padding:12px 14px;border-radius:12px;min-width:0}
+.total .k{font-family:var(--f-mono);font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.total .v{font-family:var(--f-display);font-weight:700;font-size:46px;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.total .s{font-size:13px;color:var(--muted)}
+.total.today{background:var(--bg)}
+.stamp{border:3px double var(--accent);color:var(--accent);transform:rotate(-1.2deg)}
+.stamp .k{color:var(--accent)}
+.delta{justify-self:start;font-family:var(--f-mono);font-size:13px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--gain-soft);color:var(--gain);font-variant-numeric:tabular-nums;white-space:nowrap}
+.delta.zero{background:var(--bg);color:var(--muted)}
+.summary{margin:0;font-size:15.5px}
+.summary.note{color:var(--note);font-weight:700}
+
+.tablewrap{overflow-x:auto}
+table.bd{width:100%;border-collapse:collapse;font-size:14.5px}
+.bd th,.bd td{padding:8px 0;border-bottom:1px solid var(--rule);text-align:left;vertical-align:top}
+.bd th{font-family:var(--f-mono);font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.bd .n{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;width:4.6em;padding-left:8px}
+.bd td small{display:block;color:var(--muted);font-size:12.5px;line-height:1.35;margin-top:1px}
+.bd .dash{color:var(--muted)}
+.bd tfoot td{border-bottom:0;font-weight:700;padding-top:10px;font-size:15.5px}
+
+.lmi{display:grid;gap:8px;padding:12px 14px;border-radius:12px;background:var(--accent-soft)}
+.lmi h3{margin:0;font-size:14.5px;font-weight:700}
+.lmi .opt{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:14.5px;color:var(--muted)}
+.lmi .opt.used{color:var(--ink);font-weight:700}
+.lmi .opt .n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tag{font-family:var(--f-mono);font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:1px 6px;border-radius:5px;background:var(--accent);color:var(--on-accent);margin-left:8px;vertical-align:1px}
+
+.actions{display:flex;flex-wrap:wrap;gap:10px}
+.btn{font:inherit;font-weight:700;font-size:15px;border-radius:10px;padding:10px 14px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--on-accent)}
+.btn.ghost{background:transparent;color:var(--accent)}
+.status{margin:0;font-size:14px;color:var(--gain);min-height:1.2em}
+.status:empty{display:none}
+.copy-fallback{width:100%;min-height:170px;font-family:var(--f-mono);font-size:13px;color:var(--ink);background:var(--field);border:1px solid var(--rule);border-radius:10px;padding:10px}
+
+.notes{display:grid;gap:10px;margin-top:30px;padding-top:18px;border-top:1px solid var(--rule);font-size:14px;color:var(--muted);max-width:72ch}
+.notes p{margin:0}
+.notes ul{margin:0;padding-left:18px;display:grid;gap:4px}
+
+.dock{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-block:1px solid var(--rule);box-shadow:var(--shadow-bar);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:8px}
+.dock-in{max-width:1120px;margin:0 auto;display:flex;align-items:center;gap:8px 12px}
+.dock .d{display:grid;line-height:1.1}
+.dock .k{font-family:var(--f-mono);font-size:10.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.dock .v{font-family:var(--f-display);font-weight:700;font-size:26px;font-variant-numeric:tabular-nums}
+.dock .nov .k,.dock .nov .v{color:var(--accent)}
+.dock .arrow{color:var(--muted);font-size:18px}
+.dock .go{margin-left:auto;font:inherit;font-weight:700;font-size:14px;background:transparent;border:1px solid var(--rule);color:var(--ink);border-radius:999px;padding:8px 12px;cursor:pointer;white-space:nowrap}
+
+@media (max-width:370px){.dock .arrow{display:none}.dock .v{font-size:23px}}
+@media (min-width:960px){
+  .wrap-top{padding-block:32px 0}
+  .wrap-main{padding-block:8px 56px}
+  .layout{grid-template-columns:minmax(0,1fr) 380px;gap:40px}
+  .panel{position:sticky;top:calc(16px + env(safe-area-inset-top,0px));max-height:calc(100vh - 32px);overflow-y:auto}
+  .dock{display:none}
+}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<div class="wrap wrap-top">
+  <header class="top">
+    <p class="eyebrow">Express Entry · Comprehensive Ranking System</p>
+    <h1>CRS Points Calculator</h1>
+    <p class="lede">Compare your score under today's rules with your score from November 3, 2026, when work in high-wage occupations and job offers start earning new points.</p>
+    <p class="disclaimer">Unofficial estimate. Not affiliated with IRCC or the Government of Canada.</p>
+  </header>
+</div>
+
+<div class="dock" id="dock">
+  <div class="dock-in">
+    <div class="d"><span class="k">Today</span><span class="v" id="d-today">0</span></div>
+    <span class="arrow" aria-hidden="true">→</span>
+    <div class="d nov"><span class="k">From Nov 3</span><span class="v" id="d-nov">0</span></div>
+    <span class="delta" id="d-delta"></span>
+    <button type="button" class="go" id="go">Breakdown</button>
+  </div>
+</div>
+
+<div class="wrap wrap-main">
+  <div class="layout">
+    <form id="f" autocomplete="off" novalidate>
+      <div class="banner" id="banner"><b>Example profile.</b><span>Replace these answers with yours. The score updates as you go.</span></div>
+
+      <section class="group" aria-labelledby="h-you">
+        <h2 id="h-you">About you</h2>
+        <div class="field">
+          <span class="label" id="l-spouse">Spouse or common-law partner coming with you?</span>
+          <div class="seg" role="radiogroup" aria-labelledby="l-spouse">
+            <input type="radio" name="spouse" id="spouse-no" value="no" data-path="spouse" data-type="bool"><label for="spouse-no">No</label>
+            <input type="radio" name="spouse" id="spouse-yes" value="yes" data-path="spouse" data-type="bool"><label for="spouse-yes">Yes</label>
+          </div>
+          <p class="help">Choose No if your partner is a Canadian citizen or permanent resident, or isn't coming.</p>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label for="age">Age</label>
+            <div class="select"><select id="age" data-path="age" data-type="int"></select></div>
+            <p class="help">Your age now, or on the day you're invited to apply.</p>
+          </div>
+          <div class="field">
+            <label for="edu">Highest level of education</label>
+            <div class="select"><select id="edu" data-path="edu"></select></div>
+            <p class="help">Foreign credentials need an Educational Credential Assessment (ECA).</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="group" aria-labelledby="h-lang">
+        <h2 id="h-lang">Language tests <small>Results must be less than two years old.</small></h2>
+        <div class="field">
+          <label for="l1-test">First official language</label>
+          <div class="select"><select id="l1-test" data-path="l1.test"></select></div>
+        </div>
+        <div class="scores" id="l1-cells"></div>
+        <div class="field">
+          <label for="l2-test">Second official language</label>
+          <div class="select"><select id="l2-test" data-path="l2.test"></select></div>
+          <p class="help">Optional. A French test if your first language is English, or an English test if it's French.</p>
+        </div>
+        <div class="scores" id="l2-cells"></div>
+      </section>
+
+      <section class="group" aria-labelledby="h-work">
+        <h2 id="h-work">Work experience <small>Skilled work (TEER 0, 1, 2 or 3) in the last 10 years.</small></h2>
+        <div class="row">
+          <div class="field">
+            <label for="canExp">Skilled work in Canada</label>
+            <div class="select"><select id="canExp" data-path="canExp" data-type="int"></select></div>
+            <p class="help">Paid, full-time or an equal amount of part-time, while physically in Canada.</p>
+          </div>
+          <div class="field">
+            <label for="forExp">Skilled work outside Canada</label>
+            <div class="select"><select id="forExp" data-path="forExp" data-type="int"></select></div>
+            <p class="help">Paid, full-time or an equal amount of part-time, in one occupation.</p>
+          </div>
+        </div>
+        <div class="field">
+          <label for="hw">Was 12 months or more of your Canadian work in a high-wage occupation?</label>
+          <div class="select"><select id="hw" data-path="hw"></select></div>
+          <p class="applied" id="hw-applied" hidden></p>
+          <p class="warn" id="hw-warn" hidden>High-wage points need at least 1 year of skilled work in Canada.</p>
+          <p class="help">New from November 3. Pick the highest tier where you have 12 months combined. Months in a higher tier also count toward a lower one.</p>
+          <details class="lookup" id="hw-lookup">
+            <summary>Look up your occupation</summary>
+            <label class="sr" for="hw-q">Job title or NOC code</label>
+            <input type="search" id="hw-q" placeholder="Job title or 5-digit NOC code" enterkeyhint="search">
+            <ul class="hits" id="hw-hits"></ul>
+            <p class="lookup-msg" id="hw-msg" hidden></p>
+          </details>
+        </div>
+        <div class="field">
+          <span class="label" id="l-coq">Certificate of qualification in a trade?</span>
+          <div class="seg" role="radiogroup" aria-labelledby="l-coq">
+            <input type="radio" name="coq" id="coq-no" value="no" data-path="coq" data-type="bool"><label for="coq-no">No</label>
+            <input type="radio" name="coq" id="coq-yes" value="yes" data-path="coq" data-type="bool"><label for="coq-yes">Yes</label>
+          </div>
+          <p class="help">Issued by a Canadian province, territory or federal body after an exam.</p>
+        </div>
+      </section>
+
+      <section class="group" aria-labelledby="h-job">
+        <h2 id="h-job">Job offer</h2>
+        <div class="field">
+          <label for="job">Valid job offer</label>
+          <div class="select"><select id="job" data-path="job"></select></div>
+          <p class="applied" id="job-applied" hidden></p>
+          <p class="help">Today, job offers earn no CRS points. From November 3, an offer in a high-wage occupation earns 50 to 100 points, and no LMIA is needed.</p>
+          <details class="lookup" id="job-lookup">
+            <summary>Look up the job's occupation</summary>
+            <label class="sr" for="job-q">Job title or NOC code</label>
+            <input type="search" id="job-q" placeholder="Job title or 5-digit NOC code" enterkeyhint="search">
+            <ul class="hits" id="job-hits"></ul>
+            <p class="lookup-msg" id="job-msg" hidden></p>
+          </details>
+        </div>
+      </section>
+
+      <section class="group" aria-labelledby="h-extra">
+        <h2 id="h-extra">Extra points</h2>
+        <div class="row">
+          <div class="field">
+            <span class="label" id="l-pnp">Provincial or territorial nomination?</span>
+            <div class="seg" role="radiogroup" aria-labelledby="l-pnp">
+              <input type="radio" name="pnp" id="pnp-no" value="no" data-path="pnp" data-type="bool"><label for="pnp-no">No</label>
+              <input type="radio" name="pnp" id="pnp-yes" value="yes" data-path="pnp" data-type="bool"><label for="pnp-yes">Yes</label>
+            </div>
+          </div>
+          <div class="field">
+            <span class="label" id="l-sib">Brother or sister in Canada?</span>
+            <div class="seg" role="radiogroup" aria-labelledby="l-sib">
+              <input type="radio" name="sibling" id="sibling-no" value="no" data-path="sibling" data-type="bool"><label for="sibling-no">No</label>
+              <input type="radio" name="sibling" id="sibling-yes" value="yes" data-path="sibling" data-type="bool"><label for="sibling-yes">Yes</label>
+            </div>
+            <p class="help">Yours or your partner's, 18 or older, and a citizen or permanent resident.</p>
+          </div>
+        </div>
+        <div class="field">
+          <label for="canEdu">Post-secondary credential earned in Canada</label>
+          <div class="select"><select id="canEdu" data-path="canEdu"></select></div>
+          <p class="help">Studied at a school in Canada. Distance learning doesn't count for these points.</p>
+        </div>
+      </section>
+
+      <section class="group" id="partner" aria-labelledby="h-partner">
+        <h2 id="h-partner">Your partner <small>These count only when your partner is coming with you.</small></h2>
+        <div class="row">
+          <div class="field">
+            <label for="sp-edu">Partner's highest education</label>
+            <div class="select"><select id="sp-edu" data-path="sp.edu"></select></div>
+          </div>
+          <div class="field">
+            <label for="sp-canExp">Partner's skilled work in Canada</label>
+            <div class="select"><select id="sp-canExp" data-path="sp.canExp" data-type="int"></select></div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="sp-test">Partner's language test</label>
+          <div class="select"><select id="sp-test" data-path="sp.lang.test"></select></div>
+        </div>
+        <div class="scores" id="sp-cells"></div>
+      </section>
+    </form>
+
+    <aside class="results" id="results" aria-labelledby="h-results">
+      <div class="panel">
+        <h2 id="h-results">Your estimate</h2>
+        <div class="totals">
+          <div class="total today"><span class="k">Today</span><span class="v" id="t-today">0</span><span class="s">Current rules</span></div>
+          <div class="total stamp"><span class="k">From Nov 3</span><span class="v" id="t-nov">0</span><span class="delta" id="t-delta"></span></div>
+        </div>
+        <p class="summary" id="summary"></p>
+        <div class="tablewrap">
+          <table class="bd">
+            <thead><tr><th scope="col">Factor</th><th scope="col" class="n">Today</th><th scope="col" class="n">Nov 3</th></tr></thead>
+            <tbody id="bd-body"></tbody>
+            <tfoot><tr><td>Total</td><td class="n" id="bd-today"></td><td class="n" id="bd-nov"></td></tr></tfoot>
+          </table>
+        </div>
+        <div class="lmi" id="lmi"></div>
+        <div class="actions">
+          <button type="button" class="btn" id="copy">Copy my results</button>
+          <button type="button" class="btn ghost" id="reset">Reset to example</button>
+        </div>
+        <p class="status" id="status" aria-live="polite"></p>
+        <textarea id="copy-text" class="copy-fallback" readonly hidden aria-label="Results to copy"></textarea>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="notes">
+    <p>Unofficial estimate, not affiliated with IRCC or the Government of Canada. Built from IRCC's published CRS tables and the November 3, 2026 changes, checked October 16, 2026. The score in your Express Entry profile is the one that counts.</p>
+    <p>Invitation rounds pause for up to two weeks from November 3 while IRCC recalculates existing profiles.</p>
+    <p>Your answers are saved in this browser only.</p>
+    <ul>
+      <li><a href="https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/changes.html" target="_blank" rel="noopener">2026 changes to points for Canadian work experience and job offers</a></li>
+      <li><a href="https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/check-score/crs-criteria.html" target="_blank" rel="noopener">CRS criteria</a></li>
+      <li><a href="https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/check-score/high-wage.html" target="_blank" rel="noopener">High-wage occupations list</a></li>
+      <li><a href="https://www.canada.ca/en/immigration-refugees-citizenship/corporate/publications-manuals/operational-bulletins-manuals/standard-requirements/language-requirements/test-equivalency-charts.html" target="_blank" rel="noopener">Language test equivalency charts</a></li>
+      <li><a href="https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/find-national-occupation-code.html" target="_blank" rel="noopener">Find your NOC code</a></li>
+    </ul>
+  </footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+// ===== SCORING START =====
+const SKILLS = ["L","R","W","S"];
+const SKILL_NAMES = {L:"Listening", R:"Reading", W:"Writing", S:"Speaking"};
+const TESTS = {
+  ielts:{name:"IELTS General Training", short:"IELTS", lang:"en", kind:"band"},
+  celpip:{name:"CELPIP-General", short:"CELPIP", lang:"en", kind:"celpip"},
+  pte:{name:"PTE Core", short:"PTE Core", lang:"en", kind:"num", range:{L:[10,90],R:[10,90],W:[10,90],S:[10,90]}},
+  clb:{name:"I know my CLB levels", short:"CLB", lang:"en", kind:"level"},
+  tef:{name:"TEF Canada (taken after Dec 10, 2023)", short:"TEF Canada", lang:"fr", kind:"num", range:{L:[0,699],R:[0,699],W:[0,699],S:[0,699]}},
+  tcf:{name:"TCF Canada", short:"TCF Canada", lang:"fr", kind:"num", range:{L:[100,699],R:[100,699],W:[0,20],S:[0,20]}},
+  nclc:{name:"I know my NCLC levels", short:"NCLC", lang:"fr", kind:"level"}
+};
+// [minimum score, CLB/NCLC level], from IRCC's language test equivalency charts
+const BANDS = {
+  ielts:{L:[[8.5,10],[8,9],[7.5,8],[6,7],[5.5,6],[5,5],[4.5,4]],
+         R:[[8,10],[7,9],[6.5,8],[6,7],[5,6],[4,5],[3.5,4]],
+         W:[[7.5,10],[7,9],[6.5,8],[6,7],[5.5,6],[5,5],[4,4]],
+         S:[[7.5,10],[7,9],[6.5,8],[6,7],[5.5,6],[5,5],[4,4]]},
+  pte:{L:[[89,10],[82,9],[71,8],[60,7],[50,6],[39,5],[28,4],[18,3]],
+       R:[[88,10],[78,9],[69,8],[60,7],[51,6],[42,5],[33,4],[24,3]],
+       W:[[90,10],[88,9],[79,8],[69,7],[60,6],[51,5],[41,4],[32,3]],
+       S:[[89,10],[84,9],[76,8],[68,7],[59,6],[51,5],[42,4],[34,3]]},
+  tef:{L:[[546,10],[503,9],[462,8],[434,7],[393,6],[352,5],[306,4]],
+       R:[[546,10],[503,9],[462,8],[434,7],[393,6],[352,5],[306,4]],
+       W:[[558,10],[512,9],[472,8],[428,7],[379,6],[330,5],[268,4]],
+       S:[[556,10],[518,9],[494,8],[456,7],[422,6],[387,5],[328,4]]},
+  tcf:{L:[[549,10],[523,9],[503,8],[458,7],[398,6],[369,5],[331,4]],
+       R:[[549,10],[524,9],[499,8],[453,7],[406,6],[375,5],[342,4]],
+       W:[[16,10],[14,9],[12,8],[10,7],[7,6],[6,5],[4,4]],
+       S:[[16,10],[14,9],[12,8],[10,7],[7,6],[6,5],[4,4]]}
+};
+function toLevel(test, skill, raw){
+  if (raw === "" || raw == null || !TESTS[test]) return null;
+  const kind = TESTS[test].kind;
+  if (kind === "celpip"){
+    if (raw === "M") return 0;
+    const n = parseInt(raw, 10);
+    return Number.isFinite(n) ? Math.min(n, 10) : null;
+  }
+  if (kind === "level"){
+    const n = parseInt(raw, 10);
+    return Number.isFinite(n) ? Math.min(n, 10) : null;
+  }
+  const v = parseFloat(raw);
+  if (!Number.isFinite(v)) return null;
+  const range = TESTS[test].range;
+  if (range){ const lim = range[skill]; if (v < lim[0] || v > lim[1]) return null; }
+  for (const [min, lvl] of BANDS[test][skill]) if (v >= min) return lvl;
+  return 0;
+}
+function readLang(l){
+  if (!l || !TESTS[l.test]) return {test:"none", lang:null, levels:[null,null,null,null], complete:false};
+  const levels = SKILLS.map(s => toLevel(l.test, s, l[s]));
+  return {test:l.test, lang:TESTS[l.test].lang, levels, complete:levels.every(x => x !== null)};
+}
+const AGE_TABLE = {18:[90,99],19:[95,105],30:[95,105],31:[90,99],32:[85,94],33:[80,88],34:[75,83],35:[70,77],36:[65,72],37:[60,66],38:[55,61],39:[50,55],40:[45,50],41:[35,39],42:[25,28],43:[15,17],44:[5,6]};
+function agePts(age, withSp){
+  let r;
+  if (age <= 17 || age >= 45) r = [0,0];
+  else if (age >= 20 && age <= 29) r = [100,110];
+  else r = AGE_TABLE[age] || [0,0];
+  return r[withSp ? 0 : 1];
+}
+// pts: [with partner, without]; sp: partner factor points; tier: skill transferability level
+const EDU = {
+  none:{label:"Less than secondary school (high school)", pts:[0,0], sp:0, tier:0},
+  secondary:{label:"Secondary diploma (high school graduation)", pts:[28,30], sp:2, tier:0},
+  one_year:{label:"One-year diploma, certificate or degree", pts:[84,90], sp:6, tier:1},
+  two_year:{label:"Two-year program", pts:[91,98], sp:7, tier:1},
+  bachelors:{label:"Bachelor's degree, or a program of 3+ years", pts:[112,120], sp:8, tier:1},
+  two_or_more:{label:"Two or more credentials, one of them 3+ years", pts:[119,128], sp:9, tier:2},
+  masters:{label:"Master's, or professional degree for a licensed profession", pts:[126,135], sp:10, tier:2},
+  phd:{label:"Doctoral degree (PhD)", pts:[140,150], sp:10, tier:2}
+};
+function firstLangPts(c, withSp){
+  if (c == null || c < 4) return 0;
+  if (c <= 5) return 6;
+  if (c === 6) return withSp ? 8 : 9;
+  if (c === 7) return withSp ? 16 : 17;
+  if (c === 8) return withSp ? 22 : 23;
+  if (c === 9) return withSp ? 29 : 31;
+  return withSp ? 32 : 34;
+}
+function secondLangPts(c){ if (c == null || c <= 4) return 0; if (c <= 6) return 1; if (c <= 8) return 3; return 6; }
+function partnerLangPts(c){ if (c == null || c <= 4) return 0; if (c <= 6) return 1; if (c <= 8) return 3; return 5; }
+const CAN_WORK = [[0,0],[35,40],[46,53],[56,64],[63,72],[70,80]];
+const SP_CAN_WORK = [0,5,7,8,9,10];
+const HW_BONUS = {none:0, x13:20, x15:40, x2:70};
+const JOB_PTS = {none:0, other:0, x13:50, x15:70, x2:100};
+function withLang(cat, strong, good){
+  if (cat === 1) return strong ? 25 : good ? 13 : 0;
+  if (cat === 2) return strong ? 50 : good ? 25 : 0;
+  return 0;
+}
+function withCanWork(cat, canYears){
+  if (canYears < 1 || cat === 0) return 0;
+  const two = canYears >= 2;
+  return cat === 1 ? (two ? 25 : 13) : (two ? 50 : 25);
+}
+function scoreProfile(p){
+  const withSp = !!p.spouse;
+  const i = withSp ? 0 : 1;
+  const l1 = readLang(p.l1);
+  let l2 = readLang(p.l2);
+  if (l2.lang && l2.lang === l1.lang) l2 = readLang(null);
+
+  const age = agePts(p.age, withSp);
+  const edu = EDU[p.edu] ? EDU[p.edu].pts[i] : 0;
+  const lang1 = l1.levels.reduce((s, c) => s + firstLangPts(c, withSp), 0);
+  const lang2 = Math.min(withSp ? 22 : 24, l2.levels.reduce((s, c) => s + secondLangPts(c), 0));
+  const canYears = Math.max(0, Math.min(5, p.canExp | 0));
+  const can = CAN_WORK[canYears][i];
+
+  let sp = {edu:0, lang:0, can:0, total:0, l:null};
+  if (withSp && p.sp){
+    const sl = readLang(p.sp.lang);
+    const spEdu = EDU[p.sp.edu] ? EDU[p.sp.edu].sp : 0;
+    const spLang = Math.min(20, sl.levels.reduce((s, c) => s + partnerLangPts(c), 0));
+    const spCan = SP_CAN_WORK[Math.max(0, Math.min(5, p.sp.canExp | 0))];
+    sp = {edu:spEdu, lang:spLang, can:spCan, total:Math.min(40, spEdu + spLang + spCan), l:sl};
+  }
+
+  const minClb = Math.min(...l1.levels.map(c => c == null ? 0 : c));
+  const strong = minClb >= 9, good = minClb >= 7;
+  const tier = EDU[p.edu] ? EDU[p.edu].tier : 0;
+  const fcat = p.forExp >= 3 ? 2 : p.forExp >= 1 ? 1 : 0;
+  const stEdu = Math.min(50, withLang(tier, strong, good) + withCanWork(tier, canYears));
+  const stFor = Math.min(50, withLang(fcat, strong, good) + withCanWork(fcat, canYears));
+  const stCoq = p.coq ? (minClb >= 7 ? 50 : minClb >= 5 ? 25 : 0) : 0;
+  const skills = {edu:stEdu, foreign:stFor, coq:stCoq, total:Math.min(100, stEdu + stFor + stCoq)};
+
+  const fr = l1.lang === "fr" ? l1 : l2.lang === "fr" ? l2 : null;
+  const en = l1.lang === "en" ? l1 : l2.lang === "en" ? l2 : null;
+  let french = 0;
+  if (fr && fr.complete && fr.levels.every(c => c >= 7)) french = (en && en.complete && en.levels.every(c => c >= 5)) ? 50 : 25;
+  const add = {pnp:p.pnp ? 600 : 0, sibling:p.sibling ? 15 : 0, canEdu:p.canEdu === "long" ? 30 : p.canEdu === "short" ? 15 : 0, french};
+  add.total = Math.min(600, add.pnp + add.sibling + add.canEdu + add.french);
+
+  // From Nov 3, 2026: Labour Market Integration = higher of (work-length + high-wage bonus) or job offer
+  const hwAsked = HW_BONUS[p.hw] || 0;
+  const hw = canYears >= 1 ? hwAsked : 0;
+  const job = JOB_PTS[p.job] || 0;
+  const workPath = can + hw;
+  const lmi = {can, hw, workPath, job, value:Math.max(workPath, job), path:job > workPath ? "job" : "work", hwBlocked:canYears < 1 && hwAsked > 0};
+
+  const shared = age + edu + lang1 + lang2 + sp.total + skills.total + add.total;
+  const today = shared + can;
+  const nov = shared + lmi.value;
+  return {withSp, l1, l2, core:{age, edu, lang1, lang2, can}, sp, skills, add, lmi, today, nov, delta:nov - today};
+}
+// ===== SCORING END =====
+
+const NOC_RAW = `x2|00011|Senior government managers and officials
+x2|00012|Senior managers - financial, communications and other business services
+x2|00013|Senior managers - health, education, social and community services and membership organizations
+x2|10010|Financial managers
+x2|10011|Human resources managers
+x2|10012|Purchasing managers
+x2|10020|Insurance, real estate and financial brokerage managers
+x2|10021|Banking, credit and other investment managers
+x2|20010|Engineering managers
+x2|20011|Architecture and science managers
+x2|20012|Computer and information systems managers
+x2|21330|Mining engineers
+x2|21332|Petroleum engineers
+x2|31100|Specialists in clinical and laboratory medicine
+x2|31101|Specialists in surgery
+x2|31102|General practitioners and family physicians
+x2|31103|Veterinarians
+x2|31302|Nurse practitioners
+x2|31303|Physician assistants, midwives and allied health professionals
+x2|40010|Government managers - health and social policy development and program administration
+x2|40011|Government managers - economic analysis, policy development and program administration
+x2|40012|Government managers - education policy development and program administration
+x2|40019|Other managers in public administration
+x2|40040|Commissioned police officers and related occupations in public protection services
+x2|40041|Fire chiefs and senior firefighting officers
+x2|41100|Judges
+x2|41101|Lawyers and Quebec notaries
+x2|41200|University professors and lecturers
+x2|60010|Corporate sales managers
+x2|80010|Managers in natural resources production and fishing
+x2|90011|Utilities managers
+x15|00014|Senior managers - trade, broadcasting and other services
+x15|00015|Senior managers - construction, transportation, production and utilities
+x15|10019|Other administrative services managers
+x15|10022|Advertising, marketing and public relations managers
+x15|10029|Other business services managers
+x15|10030|Telecommunication carriers managers
+x15|11103|Securities agents, investment dealers and brokers
+x15|11201|Professional occupations in business management consulting
+x15|21100|Physicists and astronomers
+x15|21102|Geoscientists and oceanographers
+x15|21103|Meteorologists and climatologists
+x15|21109|Other professional occupations in physical sciences
+x15|21111|Forestry professionals
+x15|21120|Public and environmental health and safety professionals
+x15|21202|Urban and land use planners
+x15|21210|Mathematicians, statisticians and actuaries
+x15|21211|Data scientists
+x15|21220|Cybersecurity specialists
+x15|21221|Business systems specialists
+x15|21222|Information systems specialists
+x15|21223|Database analysts and data administrators
+x15|21230|Computer systems developers and programmers
+x15|21231|Software engineers and designers
+x15|21232|Software developers and programmers
+x15|21300|Civil engineers
+x15|21301|Mechanical engineers
+x15|21310|Electrical and electronics engineers
+x15|21311|Computer engineers (except software engineers and designers)
+x15|21320|Chemical engineers
+x15|21321|Industrial and manufacturing engineers
+x15|21322|Metallurgical and materials engineers
+x15|21331|Geological engineers
+x15|21390|Aerospace engineers
+x15|21399|Other professional engineers
+x15|22231|Engineering inspectors and regulatory officers
+x15|22312|Industrial instrument technicians and mechanics
+x15|30010|Managers in health care
+x15|31110|Dentists
+x15|31112|Audiologists and speech-language pathologists
+x15|31120|Pharmacists
+x15|31200|Psychologists
+x15|31202|Physiotherapists
+x15|31203|Occupational therapists
+x15|31300|Nursing coordinators and supervisors
+x15|31301|Registered nurses and registered psychiatric nurses
+x15|32111|Dental hygienists and dental therapists
+x15|40020|Administrators - post-secondary education and vocational training
+x15|40021|School principals and administrators of elementary and secondary education
+x15|40030|Managers in social, community and correctional services
+x15|40042|Commissioned officers of the Canadian Armed Forces
+x15|41210|College and other vocational instructors
+x15|41220|Secondary school teachers
+x15|41221|Elementary school and kindergarten teachers
+x15|41310|Police investigators and other investigative occupations
+x15|41311|Probation and parole officers
+x15|41320|Educational counsellors
+x15|41401|Economists and economic policy researchers and analysts
+x15|41402|Business development officers and market researchers and analysts
+x15|41404|Health policy researchers, consultants and program officers
+x15|41407|Program officers unique to government
+x15|42100|Police officers (except commissioned)
+x15|42101|Firefighters
+x15|50010|Library, archive, museum and art gallery managers
+x15|50011|Managers - publishing, motion pictures, broadcasting and performing arts
+x15|51100|Librarians
+x15|70010|Construction managers
+x15|70012|Facility operation and maintenance managers
+x15|70020|Managers in transportation
+x15|70021|Postal and courier services managers
+x15|72011|Contractors and supervisors, electrical trades and telecommunications occupations
+x15|72012|Contractors and supervisors, pipefitting trades
+x15|72023|Supervisors, railway transport operations
+x15|72103|Boilermakers
+x15|72202|Power system electricians
+x15|72203|Electrical power line and cable workers
+x15|72301|Steamfitters, pipefitters and sprinkler system installers
+x15|72406|Elevator constructors and mechanics
+x15|72600|Air pilots, flight engineers and flying instructors
+x15|72601|Air traffic controllers and related occupations
+x15|72604|Railway traffic controllers and marine traffic regulators
+x15|73310|Railway and yard locomotive engineers
+x15|82020|Supervisors, mining and quarrying
+x15|82021|Contractors and supervisors, oil and gas drilling and services
+x15|83101|Oil and gas well drillers, servicers, testers and related workers
+x15|90010|Manufacturing managers
+x15|92011|Supervisors, petroleum, gas and chemical processing and utilities
+x15|92100|Power engineers and power systems operators
+x15|93100|Central control and process operators, mineral and metal processing
+x15|93101|Central control and process operators, petroleum, gas and chemical processing
+x13|00010|Legislators
+x13|11100|Financial auditors and accountants
+x13|11101|Financial and investment analysts
+x13|11102|Financial advisors
+x13|11109|Other financial officers
+x13|11200|Human resources professionals
+x13|12201|Insurance adjusters and claims examiners
+x13|12203|Assessors, business valuators and appraisers
+x13|21101|Chemists
+x13|21110|Biologists and related scientists
+x13|21112|Agricultural representatives, consultants and specialists
+x13|21200|Architects
+x13|21201|Landscape architects
+x13|21203|Land surveyors
+x13|21234|Web developers and programmers
+x13|22214|Technical occupations in geomatics and meteorology
+x13|22232|Occupational health and safety specialists
+x13|22233|Construction inspectors
+x13|22310|Electrical and electronics engineering technologists and technicians
+x13|22313|Aircraft instrument, electrical and avionics mechanics, technicians and inspectors
+x13|31121|Dietitians and nutritionists
+x13|32102|Paramedical occupations
+x13|32103|Respiratory therapists, clinical perfusionists and cardiopulmonary technologists
+x13|32120|Medical laboratory technologists
+x13|32121|Medical radiation technologists
+x13|32122|Medical sonographers
+x13|41300|Social workers
+x13|41400|Natural and applied science policy researchers, consultants and program officers
+x13|41403|Social policy researchers, consultants and program officers
+x13|41405|Education policy researchers, consultants and program officers
+x13|41409|Other professional occupations in social science
+x13|43201|Correctional service officers
+x13|43203|Border services, customs, and immigration officers
+x13|50012|Recreation, sports and fitness program and service directors
+x13|51101|Conservators and curators
+x13|51102|Archivists
+x13|51111|Authors and writers (except technical)
+x13|51112|Technical writers
+x13|51120|Producers, directors, choreographers and related occupations
+x13|52112|Broadcast technicians
+x13|60020|Retail and wholesale trade managers
+x13|60031|Accommodation service managers
+x13|60040|Managers in customer and personal services
+x13|72010|Contractors and supervisors, machining, metal forming, shaping and erecting trades and related occupations
+x13|72013|Contractors and supervisors, carpentry trades
+x13|72014|Contractors and supervisors, other construction trades, installers, repairers and servicers
+x13|72020|Contractors and supervisors, mechanic trades
+x13|72021|Contractors and supervisors, heavy equipment operator crews
+x13|72102|Sheet metal workers
+x13|72105|Ironworkers
+x13|72201|Industrial electricians
+x13|72302|Gas fitters
+x13|72320|Bricklayers
+x13|72321|Insulators
+x13|72401|Heavy-duty equipment mechanics
+x13|72403|Railway carmen/women
+x13|72404|Aircraft mechanics and aircraft inspectors
+x13|72500|Crane operators
+x13|72602|Deck officers, water transport
+x13|72603|Engineer officers, water transport
+x13|73311|Railway conductors and brakemen/women
+x13|82010|Supervisors, logging and forestry
+x13|83100|Underground production and development miners
+x13|83120|Fishing masters and officers
+x13|92010|Supervisors, mineral and metal processing
+x13|93102|Pulping, papermaking and coating control operators`;
+const NOC = NOC_RAW.trim().split("\n").map(line => { const parts = line.split("|"); return [parts[1], parts[2], parts[0]]; });
+const NOC_BY_CODE = {};
+NOC.forEach(n => { NOC_BY_CODE[n[0]] = n; });
+const TIER = {x2:{label:"2× tier", hw:70, job:100}, x15:{label:"1.5× tier", hw:40, job:70}, x13:{label:"1.3× tier", hw:20, job:50}};
+
+const CAN_LABELS = ["None or less than 1 year","1 year","2 years","3 years","4 years","5 years or more"];
+const FOR_LABELS = ["None or less than 1 year","1 year","2 years","3 years or more"];
+const HW_OPTS = [["none","No, or less than 12 months"],["x13","Yes, 1.3× tier occupation (+20)"],["x15","Yes, 1.5× tier occupation (+40)"],["x2","Yes, 2× tier occupation (+70)"]];
+const JOB_OPTS = [["none","No job offer"],["x2","Yes, 2× tier occupation (100)"],["x15","Yes, 1.5× tier occupation (70)"],["x13","Yes, 1.3× tier occupation (50)"],["other","Yes, not on the high-wage list (0)"]];
+const CANEDU_OPTS = [["none","No Canadian credential"],["short","1- or 2-year diploma or certificate"],["long","3+ year credential, or a master's, professional or doctoral degree"]];
+const EN_TESTS = ["ielts","celpip","pte","clb"];
+const FR_TESTS = ["tef","tcf","nclc"];
+
+const EXAMPLE = {
+  spouse:false, age:29, edu:"bachelors",
+  l1:{test:"ielts", L:"8", R:"7", W:"7", S:"7"},
+  l2:{test:"none", L:"", R:"", W:"", S:""},
+  canExp:2, hw:"x15", hwNoc:"21232",
+  forExp:3, coq:false,
+  job:"none", jobNoc:"",
+  pnp:false, sibling:false, canEdu:"none",
+  sp:{edu:"bachelors", canExp:0, lang:{test:"none", L:"", R:"", W:"", S:""}}
+};
+const KEY = "crs-points-calculator:v1";
+const $ = s => document.querySelector(s);
+const clone = o => JSON.parse(JSON.stringify(o));
+function merge(base, v){
+  const out = clone(base);
+  (function m(t, s){
+    for (const k in s){
+      if (!Object.prototype.hasOwnProperty.call(t, k)) continue;
+      if (t[k] && typeof t[k] === "object" && s[k] && typeof s[k] === "object") m(t[k], s[k]);
+      else if (typeof s[k] === typeof t[k]) t[k] = s[k];
+    }
+  })(out, v);
+  return out;
+}
+function getPath(o, path){ return path.split(".").reduce((x, k) => x == null ? undefined : x[k], o); }
+function setPath(o, path, val){
+  const ks = path.split(".");
+  let x = o;
+  for (let i = 0; i < ks.length - 1; i++){ if (x[ks[i]] == null || typeof x[ks[i]] !== "object") x[ks[i]] = {}; x = x[ks[i]]; }
+  x[ks[ks.length - 1]] = val;
+}
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function optionList(list){ return list.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join(""); }
+function fmtDelta(d){ return d > 0 ? `+${d}` : d < 0 ? `−${Math.abs(d)}` : "No change"; }
+
+let p, isExample;
+(function load(){
+  let saved = null;
+  try {
+    const raw = localStorage.getItem(KEY) || localStorage.getItem("crs-points-calculator:v2");
+    if (raw) saved = JSON.parse(raw);
+  } catch (e) { saved = null; }
+  if (saved && saved.p){ p = merge(EXAMPLE, saved.p); isExample = false; }
+  else { p = clone(EXAMPLE); isExample = true; }
+})();
+function save(){ try { localStorage.setItem(KEY, JSON.stringify({v:1, p})); } catch (e) {} }
+if (!isExample) save();
+try { localStorage.removeItem("crs-points-calculator:v2"); localStorage.removeItem("crs-points-calculator:remember"); } catch (e) {}
+
+function testOptions(keys, noneLabel){
+  let html = noneLabel ? `<option value="none">${esc(noneLabel)}</option>` : "";
+  const en = keys.filter(k => TESTS[k].lang === "en"), fr = keys.filter(k => TESTS[k].lang === "fr");
+  if (en.length) html += `<optgroup label="English">${en.map(k => `<option value="${k}">${esc(TESTS[k].name)}</option>`).join("")}</optgroup>`;
+  if (fr.length) html += `<optgroup label="French">${fr.map(k => `<option value="${k}">${esc(TESTS[k].name)}</option>`).join("")}</optgroup>`;
+  return html;
+}
+function buildStaticOptions(){
+  const ages = [[17, "17 or younger"]];
+  for (let a = 18; a <= 44; a++) ages.push([a, String(a)]);
+  ages.push([45, "45 or older"]);
+  $("#age").innerHTML = optionList(ages);
+  const eduList = Object.keys(EDU).map(k => [k, EDU[k].label]);
+  $("#edu").innerHTML = optionList(eduList);
+  $("#sp-edu").innerHTML = optionList(eduList);
+  $("#canExp").innerHTML = optionList(CAN_LABELS.map((l, i) => [i, l]));
+  $("#sp-canExp").innerHTML = optionList(CAN_LABELS.map((l, i) => [i, l]));
+  $("#forExp").innerHTML = optionList(FOR_LABELS.map((l, i) => [i, l]));
+  $("#hw").innerHTML = optionList(HW_OPTS);
+  $("#job").innerHTML = optionList(JOB_OPTS);
+  $("#canEdu").innerHTML = optionList(CANEDU_OPTS);
+  $("#l1-test").innerHTML = testOptions(EN_TESTS.concat(FR_TESTS), "");
+  $("#sp-test").innerHTML = testOptions(EN_TESTS.concat(FR_TESTS), "No test");
+}
+function buildSecondOptions(){
+  const firstLang = TESTS[p.l1.test] ? TESTS[p.l1.test].lang : "en";
+  $("#l2-test").innerHTML = testOptions(firstLang === "en" ? FR_TESTS : EN_TESTS, "None");
+  if (p.l2.test !== "none" && (!TESTS[p.l2.test] || TESTS[p.l2.test].lang === firstLang)) p.l2 = {test:"none", L:"", R:"", W:"", S:""};
+  $("#l2-test").value = p.l2.test;
+}
+function syncStatic(){
+  document.querySelectorAll("[data-path]").forEach(el => {
+    const v = getPath(p, el.dataset.path);
+    if (el.type === "radio") el.checked = el.value === (v ? "yes" : "no");
+    else el.value = v == null ? "" : String(v);
+  });
+}
+
+const CELLS = {"l1":"#l1-cells", "l2":"#l2-cells", "sp.lang":"#sp-cells"};
+function renderCells(base){
+  const box = $(CELLS[base]);
+  const l = getPath(p, base);
+  if (!l || !TESTS[l.test]){ box.innerHTML = ""; box.hidden = true; return; }
+  box.hidden = false;
+  const t = TESTS[l.test];
+  const idBase = base.replace(".", "-");
+  const pre = t.lang === "fr" ? "NCLC" : "CLB";
+  box.innerHTML = SKILLS.map(s => {
+    const id = `${idBase}-${s}`, path = `${base}.${s}`;
+    let control;
+    if (t.kind === "num"){
+      const lim = t.range[s];
+      control = `<input type="number" id="${id}" data-path="${path}" inputmode="numeric" min="${lim[0]}" max="${lim[1]}" step="1" placeholder="${lim[0]}–${lim[1]}">`;
+    } else {
+      let o = '<option value="">Select</option>';
+      if (t.kind === "band") for (let v = 9; v >= 0; v -= 0.5) o += `<option value="${v}">${v.toFixed(1)}</option>`;
+      if (t.kind === "celpip"){ for (let v = 12; v >= 1; v--) o += `<option value="${v}">${v}</option>`; o += '<option value="M">M</option>'; }
+      if (t.kind === "level"){ o += `<option value="10">${pre} 10 or higher</option>`; for (let v = 9; v >= 4; v--) o += `<option value="${v}">${pre} ${v}</option>`; o += `<option value="0">Below ${pre} 4</option>`; }
+      control = `<div class="select"><select id="${id}" data-path="${path}">${o}</select></div>`;
+    }
+    return `<div class="cell"><label for="${id}">${SKILL_NAMES[s]}</label>${control}<span class="lvl" id="${id}-lvl"></span></div>`;
+  }).join("");
+  SKILLS.forEach(s => { const el = document.getElementById(`${idBase}-${s}`); if (el) el.value = l[s] == null ? "" : String(l[s]); });
+}
+function updateChips(base, info){
+  const l = getPath(p, base);
+  if (!l || !TESTS[l.test] || !info) return;
+  const t = TESTS[l.test];
+  const pre = t.lang === "fr" ? "NCLC" : "CLB";
+  const idBase = base.replace(".", "-");
+  SKILLS.forEach((s, i) => {
+    const chip = document.getElementById(`${idBase}-${s}-lvl`);
+    if (!chip) return;
+    if (t.kind === "level"){ chip.hidden = true; return; }
+    const lv = info.levels[i];
+    chip.hidden = false;
+    chip.classList.toggle("miss", lv == null);
+    chip.textContent = lv == null ? (l[s] === "" ? "Not entered" : "Check this score") : lv >= 10 ? `${pre} 10+` : lv >= 4 ? `${pre} ${lv}` : `Below ${pre} 4`;
+  });
+}
+function setApplied(kind){
+  const el = $(`#${kind}-applied`);
+  const n = p[kind + "Noc"] && NOC_BY_CODE[p[kind + "Noc"]];
+  if (n && p[kind] === n[2]){ el.hidden = false; el.textContent = `Set from NOC ${n[0]}, ${n[1]}`; }
+  else el.hidden = true;
+}
+
+function renderResults(r){
+  $("#t-today").textContent = r.today;
+  $("#t-nov").textContent = r.nov;
+  $("#d-today").textContent = r.today;
+  $("#d-nov").textContent = r.nov;
+  ["#t-delta", "#d-delta"].forEach(s => { const el = $(s); el.textContent = fmtDelta(r.delta); el.classList.toggle("zero", r.delta === 0); });
+
+  const dash = '<span class="dash">–</span>';
+  const row = (label, a, b, sub) => `<tr><td>${label}${sub ? `<small>${sub}</small>` : ""}</td><td class="n">${a == null ? dash : a}</td><td class="n">${b == null ? dash : b}</td></tr>`;
+  const rows = [
+    row("Age", r.core.age, r.core.age),
+    row("Education", r.core.edu, r.core.edu),
+    row("First official language", r.core.lang1, r.core.lang1),
+    row("Second official language", r.core.lang2, r.core.lang2),
+    row("Canadian work experience", r.core.can, null, "From Nov 3 it counts inside the new factor"),
+    row("Labour Market Integration", null, r.lmi.value, r.lmi.path === "job" ? "New factor, using your job offer" : r.lmi.hw ? `New factor: work ${r.lmi.can} + high-wage ${r.lmi.hw}` : "New factor, using your Canadian work")
+  ];
+  if (r.withSp) rows.push(row("Partner factors", r.sp.total, r.sp.total, `Education ${r.sp.edu}, language ${r.sp.lang}, Canadian work ${r.sp.can}`));
+  rows.push(row("Skill transferability", r.skills.total, r.skills.total, `Education ${r.skills.edu}, foreign work ${r.skills.foreign}${r.skills.coq ? `, trade certificate ${r.skills.coq}` : ""}`));
+  const extras = [];
+  if (r.add.pnp) extras.push(`Nomination ${r.add.pnp}`);
+  if (r.add.french) extras.push(`French ${r.add.french}`);
+  if (r.add.canEdu) extras.push(`Canadian study ${r.add.canEdu}`);
+  if (r.add.sibling) extras.push(`Sibling ${r.add.sibling}`);
+  rows.push(row("Additional points", r.add.total, r.add.total, extras.join(", ")));
+  $("#bd-body").innerHTML = rows.join("");
+  $("#bd-today").textContent = r.today;
+  $("#bd-nov").textContent = r.nov;
+
+  const workUsed = r.lmi.path === "work";
+  const tag = '<span class="tag">Counts</span>';
+  $("#lmi").innerHTML =
+    `<h3>How the new factor scores you</h3>` +
+    `<div class="opt${workUsed ? " used" : ""}"><span>Canadian work${r.lmi.hw ? " + high-wage bonus" : ""}${workUsed ? tag : ""}</span><span class="n">${r.lmi.hw ? `${r.lmi.can} + ${r.lmi.hw} = ${r.lmi.workPath}` : r.lmi.workPath}</span></div>` +
+    `<div class="opt${workUsed ? "" : " used"}"><span>Job offer${workUsed ? "" : tag}</span><span class="n">${r.lmi.job}</span></div>` +
+    `<p class="help">You get whichever is higher, not both.</p>`;
+
+  const s = $("#summary");
+  let msg, note = false;
+  if (!r.l1.complete){ msg = "Enter all four scores for your first official language. Missing scores count as zero."; note = true; }
+  else if (r.delta > 0) msg = r.lmi.path === "job"
+    ? (r.lmi.workPath > 0 ? `Your job offer adds ${r.delta} points from November 3. It replaces your Canadian work points in the new factor.` : `Your job offer adds ${r.delta} points from November 3.`)
+    : `Your high-wage work experience adds ${r.delta} points from November 3.`;
+  else if (r.lmi.hwBlocked){ msg = "High-wage points need at least 1 year of skilled work in Canada."; note = true; }
+  else msg = "Your score stays the same on November 3. New points go only to work or job offers in high-wage occupations.";
+  s.textContent = msg;
+  s.classList.toggle("note", note);
+}
+
+function update(){
+  const r = scoreProfile(p);
+  updateChips("l1", r.l1);
+  updateChips("l2", r.l2);
+  if (r.withSp) updateChips("sp.lang", r.sp.l);
+  $("#hw-warn").hidden = !r.lmi.hwBlocked;
+  setApplied("hw");
+  setApplied("job");
+  renderResults(r);
+}
+function edited(){ if (isExample){ isExample = false; $("#banner").hidden = true; } }
+
+const form = $("#f");
+form.addEventListener("submit", e => e.preventDefault());
+function onEdit(e){
+  const el = e.target;
+  const path = el && el.dataset ? el.dataset.path : null;
+  if (!path) return;
+  const choice = el.tagName === "SELECT" || el.type === "radio";
+  if (e.type === "input" && choice) return;
+  if (e.type === "change" && !choice) return;
+  if (el.type === "radio" && !el.checked) return;
+  let v = el.value;
+  if (el.dataset.type === "int") v = parseInt(v, 10) || 0;
+  else if (el.dataset.type === "bool") v = v === "yes";
+  setPath(p, path, v);
+  if (path === "hw") p.hwNoc = "";
+  if (path === "job") p.jobNoc = "";
+  if (/\.test$/.test(path)){
+    const base = path.replace(/\.test$/, "");
+    const l = getPath(p, base);
+    SKILLS.forEach(k => { l[k] = ""; });
+    if (base === "l1") buildSecondOptions();
+    renderCells(base);
+    if (base === "l1") renderCells("l2");
+  }
+  if (path === "spouse") $("#partner").hidden = !p.spouse;
+  edited();
+  update();
+  save();
+}
+form.addEventListener("input", onEdit);
+form.addEventListener("change", onEdit);
+
+const ALIAS = {doctor:"physician", doctors:"physician", gp:"physician", cpa:"accountant", rn:"registered nurse", dev:"developer", devs:"developer", it:"information"};
+function searchNOC(q){
+  const s = q.trim().toLowerCase();
+  if (!s) return [];
+  const digits = s.replace(/\s+/g, "");
+  if (/^\d+$/.test(digits)) return NOC.filter(n => n[0].startsWith(digits)).slice(0, 8);
+  let words = s.split(/[^a-z0-9éèàç]+/).filter(w => w && (w.length >= 3 || ALIAS[w]));
+  words = words.flatMap(w => (ALIAS[w] || w).split(" ")).map(w => w.length > 4 && w.endsWith("s") ? w.slice(0, -1) : w);
+  if (!words.length) return [];
+  return NOC.filter(n => { const t = n[1].toLowerCase(); return words.every(w => t.includes(w)); }).slice(0, 8);
+}
+function drawHits(kind){
+  const q = $(`#${kind}-q`).value;
+  const list = searchNOC(q);
+  $(`#${kind}-hits`).innerHTML = list.map(n => {
+    const t = TIER[n[2]];
+    const pts = kind === "hw" ? `+${t.hw} with 12 months` : `${t.job} points`;
+    return `<li><button type="button" class="hit" data-code="${n[0]}"><span class="code">${n[0]}</span><span class="t">${esc(n[1])}</span><span class="tier">${t.label} · ${pts}</span></button></li>`;
+  }).join("");
+  const msg = $(`#${kind}-msg`);
+  const s = q.trim();
+  if (!s){ msg.hidden = true; msg.textContent = ""; }
+  else if (!list.length){
+    msg.hidden = false;
+    msg.textContent = /^\d{5}$/.test(s)
+      ? `NOC ${s} isn't on the high-wage list, so it earns no ${kind === "hw" ? "high-wage" : "job offer"} points.`
+      : "No match on the high-wage list. Try one word from the job title, or the 5-digit NOC code.";
+  } else { msg.hidden = false; msg.textContent = "Tap an occupation to use its tier."; }
+}
+["hw", "job"].forEach(kind => {
+  $(`#${kind}-q`).addEventListener("input", () => drawHits(kind));
+  $(`#${kind}-hits`).addEventListener("click", e => {
+    const b = e.target.closest("button[data-code]");
+    if (!b) return;
+    const n = NOC_BY_CODE[b.dataset.code];
+    if (!n) return;
+    p[kind] = n[2];
+    p[kind + "Noc"] = n[0];
+    $(`#${kind}`).value = n[2];
+    edited();
+    update();
+    save();
+    const msg = $(`#${kind}-msg`);
+    msg.hidden = false;
+    msg.textContent = `Using the ${TIER[n[2]].label} for NOC ${n[0]}.`;
+  });
+});
+
+function ageLabel(a){ return a <= 17 ? "17 or younger" : a >= 45 ? "45 or older" : String(a); }
+function langLine(l, info){
+  if (!l || !TESTS[l.test] || !info) return "none";
+  const t = TESTS[l.test];
+  const pre = t.lang === "fr" ? "NCLC" : "CLB";
+  const lv = info.levels.map(x => x == null ? "?" : x).join("/");
+  if (t.kind === "level") return `${pre} ${lv} (L/R/W/S)`;
+  return `${t.short} ${SKILLS.map(s => `${s} ${l[s] === "" ? "?" : l[s]}`).join(", ")} = ${pre} ${lv}`;
+}
+function summaryText(){
+  const r = scoreProfile(p);
+  const hwT = TIER[p.hw], jobT = TIER[p.job];
+  const lines = [
+    "CRS estimate (unofficial)",
+    `Today: ${r.today} | From Nov 3, 2026: ${r.nov} (${fmtDelta(r.delta)})`,
+    `${p.spouse ? "Partner coming" : "No partner counted"} | Age ${ageLabel(p.age)} | ${EDU[p.edu].label}`,
+    `First language: ${langLine(p.l1, r.l1)}`
+  ];
+  if (TESTS[p.l2.test]) lines.push(`Second language: ${langLine(p.l2, r.l2)}`);
+  lines.push(`Canadian work: ${CAN_LABELS[p.canExp]} | High-wage 12+ months: ${hwT ? hwT.label + (p.hwNoc ? ` (NOC ${p.hwNoc})` : "") : "no"}`);
+  lines.push(`Foreign work: ${FOR_LABELS[p.forExp]}${p.coq ? " | Trade certificate: yes" : ""}`);
+  lines.push(`Job offer: ${p.job === "none" ? "none" : jobT ? jobT.label + (p.jobNoc ? ` (NOC ${p.jobNoc})` : "") : "not a high-wage occupation"}`);
+  const extras = [];
+  if (p.pnp) extras.push("provincial nomination");
+  if (p.sibling) extras.push("sibling in Canada");
+  if (p.canEdu !== "none") extras.push(p.canEdu === "long" ? "Canadian 3+ year credential" : "Canadian 1-2 year credential");
+  lines.push(`Extras: ${extras.length ? extras.join(", ") : "none"}`);
+  if (p.spouse) lines.push(`Partner: ${EDU[p.sp.edu].label} | language ${langLine(p.sp.lang, r.sp.l)} | Canadian work ${CAN_LABELS[p.sp.canExp]}`);
+  lines.push(`Breakdown (today / Nov 3): age ${r.core.age}, education ${r.core.edu}, languages ${r.core.lang1 + r.core.lang2}, Canadian work ${r.core.can} / new factor ${r.lmi.value}, partner ${r.sp.total}, transferability ${r.skills.total}, additional ${r.add.total}`);
+  return lines.join("\n");
+}
+$("#copy").addEventListener("click", () => {
+  const text = summaryText();
+  const st = $("#status"), ta = $("#copy-text");
+  const fallback = () => { ta.hidden = false; ta.value = text; ta.focus(); ta.select(); st.textContent = "Select the text below and copy it."; };
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => { ta.hidden = true; st.textContent = "Copied to your clipboard."; }, fallback);
+    else fallback();
+  } catch (e) { fallback(); }
+});
+$("#reset").addEventListener("click", () => {
+  p = clone(EXAMPLE);
+  isExample = true;
+  try { localStorage.removeItem(KEY); } catch (e) {}
+  init();
+  $("#copy-text").hidden = true;
+  $("#status").textContent = "Example profile restored.";
+});
+$("#go").addEventListener("click", () => {
+  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  $("#results").scrollIntoView({behavior: reduce ? "auto" : "smooth", block: "start"});
+});
+
+function init(){
+  buildSecondOptions();
+  syncStatic();
+  renderCells("l1");
+  renderCells("l2");
+  renderCells("sp.lang");
+  $("#partner").hidden = !p.spouse;
+  $("#banner").hidden = !isExample;
+  ["hw", "job"].forEach(k => { $(`#${k}-q`).value = ""; drawHits(k); });
+  update();
+}
+buildStaticOptions();
+init();
+})();
+</script>
+
+</body>
+</html>
