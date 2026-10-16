@@ -3,11 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<!-- Google Analytics -->
+<!-- Google Analytics in Consent Mode: analytics cookies are off until the visitor allows them in the EU/EEA, UK, Switzerland and Quebec, and on elsewhere until they decline. The banner at the end of <body> saves the choice. -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-4BSPZQS1T9"></script>
 <script>
 window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
+gtag('consent', 'default', {analytics_storage: 'granted', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied'});
+gtag('consent', 'default', {analytics_storage: 'denied', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied', region: [
+  'AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE',
+  'IS','LI','NO','GB','CH','CA-QC'
+]});
+try {
+  var savedConsent = localStorage.getItem('crs-points-calculator:analytics');
+  if (savedConsent === 'granted' || savedConsent === 'denied') gtag('consent', 'update', {analytics_storage: savedConsent});
+} catch (e) {}
 gtag('js', new Date());
 gtag('config', 'G-4BSPZQS1T9');
 </script>
@@ -183,6 +192,11 @@ table.bd{width:100%;border-collapse:collapse;font-size:14.5px}
 .notes{display:grid;gap:10px;margin-top:30px;padding-top:18px;border-top:1px solid var(--rule);font-size:14px;color:var(--muted);max-width:72ch}
 .notes p{margin:0}
 .notes ul{margin:0;padding-left:18px;display:grid;gap:4px}
+.linkbtn{font:inherit;color:var(--accent);background:none;border:0;padding:0;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+
+.consent{position:fixed;z-index:30;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));max-width:600px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px;background:var(--surface);border:1px solid var(--rule);border-radius:14px;box-shadow:var(--shadow);padding:14px 16px;font-size:15px;line-height:1.45}
+.consent p{margin:0;flex:1 1 260px}
+.consent .actions{flex-wrap:nowrap}
 
 .dock{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-block:1px solid var(--rule);box-shadow:var(--shadow-bar);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:8px}
 .dock-in{max-width:1120px;margin:0 auto;display:flex;align-items:center;gap:8px 12px}
@@ -200,6 +214,7 @@ table.bd{width:100%;border-collapse:collapse;font-size:14.5px}
   .layout{grid-template-columns:minmax(0,1fr) 380px;gap:40px}
   .panel{position:sticky;top:calc(16px + env(safe-area-inset-top,0px));max-height:calc(100vh - 32px);overflow-y:auto}
   .dock{display:none}
+  .consent{left:max(16px,calc((100vw - 1120px) / 2 + 16px));right:auto;width:min(600px,calc(100vw - 452px));margin:0}
 }
 @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
 </style>
@@ -399,7 +414,7 @@ table.bd{width:100%;border-collapse:collapse;font-size:14.5px}
   <footer class="notes">
     <p>Unofficial estimate, not affiliated with IRCC or the Government of Canada. Built from IRCC's published CRS tables and the November 3, 2026 changes, checked October 16, 2026. The score in your Express Entry profile is the one that counts.</p>
     <p>Invitation rounds pause for up to two weeks from November 3 while IRCC recalculates existing profiles.</p>
-    <p>Your answers are saved in this browser only. The site uses Google Analytics to count visits; your answers are never sent to it.</p>
+    <p>Your answers are saved in this browser only. The site uses Google Analytics to count visits; your answers are never sent to it. <button type="button" class="linkbtn" id="consent-open">Cookie settings</button></p>
     <ul>
       <li><a href="https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/changes.html" target="_blank" rel="noopener">2026 changes to points for Canadian work experience and job offers</a></li>
       <li><a href="https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/check-score/crs-criteria.html" target="_blank" rel="noopener">CRS criteria</a></li>
@@ -1110,6 +1125,47 @@ function init(){
 }
 buildStaticOptions();
 init();
+})();
+</script>
+
+<div class="consent" id="consent" role="region" aria-label="Cookie settings" hidden>
+  <p>This site uses Google Analytics cookies to count visits. Your answers are never sent to it.</p>
+  <div class="actions">
+    <button type="button" class="btn" data-consent="granted">Allow</button>
+    <button type="button" class="btn ghost" data-consent="denied">Decline</button>
+  </div>
+</div>
+<script>
+// Analytics consent banner: shows until the visitor picks, then the gtag snippet in <head> applies the saved choice on every visit
+(function(){
+"use strict";
+const KEY = "crs-points-calculator:analytics";
+const box = document.getElementById("consent");
+let saved = null;
+try { saved = localStorage.getItem(KEY); } catch (e) {}
+box.hidden = saved === "granted" || saved === "denied";
+
+function clearGaCookies(){
+  document.cookie.split(";").forEach(c => {
+    const name = c.split("=")[0].trim();
+    if (!/^_ga/.test(name)) return;
+    document.cookie = `${name}=; Max-Age=0; path=/`;
+    document.cookie = `${name}=; Max-Age=0; path=/; domain=${location.hostname}`;
+  });
+}
+box.addEventListener("click", e => {
+  const b = e.target.closest("[data-consent]");
+  if (!b) return;
+  const choice = b.dataset.consent;
+  gtag("consent", "update", {analytics_storage: choice});
+  if (choice === "denied") clearGaCookies();
+  try { localStorage.setItem(KEY, choice); } catch (e) {}
+  box.hidden = true;
+});
+document.getElementById("consent-open").addEventListener("click", () => {
+  box.hidden = false;
+  box.querySelector("[data-consent]").focus();
+});
 })();
 </script>
 
