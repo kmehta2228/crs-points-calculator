@@ -102,8 +102,9 @@ h1{font-family:var(--f-display);font-weight:700;font-size:clamp(30px,7vw,44px);l
 .disclaimer{justify-self:start;margin:2px 0 0;font-size:13.5px;font-weight:700;color:var(--muted);border:1px solid var(--rule);border-radius:999px;padding:4px 12px;line-height:1.4}
 .layout{display:grid;gap:28px}
 form{display:grid;min-width:0}
-.banner{display:flex;flex-wrap:wrap;gap:4px 8px;background:var(--note-soft);border-radius:12px;padding:12px 14px;font-size:15px;margin-bottom:6px}
+.banner{display:flex;flex-wrap:wrap;gap:4px 8px;background:var(--note-soft);border-radius:12px;padding:12px 14px;font-size:15px;margin-bottom:6px;scroll-margin-top:calc(76px + env(safe-area-inset-top,0px))}
 .banner b{color:var(--note)}
+.banner .linkbtn{font-weight:700}
 
 .group{display:grid;gap:18px;padding-block:22px;border-top:1px solid var(--rule);min-width:0}
 .group:first-of-type{border-top:0;padding-top:8px}
@@ -134,6 +135,7 @@ select:focus-visible,input:focus-visible,button:focus-visible,summary:focus-visi
 .cell label{font-size:14px;font-weight:700}
 .lvl{justify-self:start;font-family:var(--f-mono);font-size:12.5px;font-weight:600;padding:2px 7px;border-radius:6px;background:var(--accent-soft);color:var(--accent);font-variant-numeric:tabular-nums}
 .lvl.miss{background:transparent;color:var(--muted);padding-left:0}
+.lvl.bad{background:var(--note-soft);color:var(--note)}
 .scores-note{grid-column:1/-1}
 .warn{margin:0;font-size:14px;font-weight:700;color:var(--note)}
 .applied{margin:0;font-size:14px;font-weight:700;color:var(--gain)}
@@ -243,7 +245,7 @@ table.bd{width:100%;border-collapse:collapse;font-size:14.5px}
 <div class="wrap wrap-main">
   <div class="layout">
     <form id="f" autocomplete="off" novalidate>
-      <div class="banner" id="banner"><b>Example profile.</b><span>Replace these answers with yours. The score updates as you go.</span></div>
+      <div class="banner" id="banner"><span id="banner-msg"></span><button type="button" class="linkbtn" id="banner-btn"></button></div>
 
       <section class="group" aria-labelledby="h-you">
         <h2 id="h-you">About you</h2>
@@ -285,7 +287,7 @@ table.bd{width:100%;border-collapse:collapse;font-size:14.5px}
       </section>
 
       <section class="group" aria-labelledby="h-work">
-        <h2 id="h-work">Work experience <small>Skilled work (TEER 0, 1, 2 or 3) in the last 10 years.</small></h2>
+        <h2 id="h-work">Work experience <small>Skilled work in the last 10 years: management, or a job that usually needs a degree, diploma, apprenticeship or 6+ months of on-the-job training (TEER 0, 1, 2 or 3).</small></h2>
         <div class="row">
           <div class="field">
             <label for="canExp">Skilled work in Canada</label>
@@ -298,14 +300,14 @@ table.bd{width:100%;border-collapse:collapse;font-size:14.5px}
             <p class="help">Paid, full-time or an equal amount of part-time, in one occupation.</p>
           </div>
         </div>
-        <div class="field">
+        <div class="field" id="hw-field">
           <label for="hw">Was 12 months or more of your Canadian work in a high-wage occupation?</label>
           <div class="select"><select id="hw" data-path="hw"></select></div>
           <p class="applied" id="hw-applied" hidden></p>
           <p class="warn" id="hw-warn" hidden>High-wage points need at least 1 year of skilled work in Canada.</p>
           <p class="help">New from November 3. Pick the highest tier where you have 12 months combined. Months in a higher tier also count toward a lower one.</p>
           <details class="lookup" id="hw-lookup">
-            <summary>Look up your occupation</summary>
+            <summary>Not sure? Search your occupation</summary>
             <label class="sr" for="hw-q">Job title or NOC code</label>
             <input type="search" id="hw-q" placeholder="Job title or 5-digit NOC code" enterkeyhint="search">
             <ul class="hits" id="hw-hits"></ul>
@@ -330,7 +332,7 @@ table.bd{width:100%;border-collapse:collapse;font-size:14.5px}
           <p class="applied" id="job-applied" hidden></p>
           <p class="help">Today, job offers earn no CRS points. From November 3, an offer in a high-wage occupation earns 50 to 100 points, and no LMIA is needed.</p>
           <details class="lookup" id="job-lookup">
-            <summary>Look up the job's occupation</summary>
+            <summary>Not sure? Search the job's occupation</summary>
             <label class="sr" for="job-q">Job title or NOC code</label>
             <input type="search" id="job-q" placeholder="Job title or 5-digit NOC code" enterkeyhint="search">
             <ul class="hits" id="job-hits"></ul>
@@ -393,6 +395,7 @@ table.bd{width:100%;border-collapse:collapse;font-size:14.5px}
           <div class="total stamp"><span class="k">From Nov 3</span><span class="v" id="t-nov">0</span><span class="delta" id="t-delta"></span></div>
         </div>
         <p class="summary" id="summary"></p>
+        <p class="help">How does this compare? See the lowest score invited in recent <a href="https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/rounds-invitations.html" target="_blank" rel="noopener">Express Entry rounds of invitations</a>.</p>
         <div class="tablewrap">
           <table class="bd">
             <thead><tr><th scope="col">Factor</th><th scope="col" class="n">Today</th><th scope="col" class="n">Nov 3</th></tr></thead>
@@ -403,7 +406,7 @@ table.bd{width:100%;border-collapse:collapse;font-size:14.5px}
         <div class="lmi" id="lmi"></div>
         <div class="actions">
           <button type="button" class="btn" id="copy">Copy my results</button>
-          <button type="button" class="btn ghost" id="reset">Reset to example</button>
+          <button type="button" class="btn ghost" id="reset">Clear all answers</button>
         </div>
         <p class="status" id="status" aria-live="polite"></p>
         <textarea id="copy-text" class="copy-fallback" readonly hidden aria-label="Results to copy"></textarea>
@@ -791,6 +794,17 @@ const EXAMPLE = {
   pnp:false, sibling:false, canEdu:"none",
   sp:{edu:"bachelors", canExp:0, lang:{test:"none", L:"", R:"", W:"", S:""}}
 };
+// What a new visitor starts from: age 0 and edu "" mean "not answered yet"
+const BLANK = {
+  spouse:false, age:0, edu:"",
+  l1:{test:"none", L:"", R:"", W:"", S:""},
+  l2:{test:"none", L:"", R:"", W:"", S:""},
+  canExp:0, hw:"none", hwNoc:"",
+  forExp:0, coq:false,
+  job:"none", jobNoc:"",
+  pnp:false, sibling:false, canEdu:"none",
+  sp:{edu:"", canExp:0, lang:{test:"none", L:"", R:"", W:"", S:""}}
+};
 const KEY = "crs-points-calculator:v1";
 const $ = s => document.querySelector(s);
 const clone = o => JSON.parse(JSON.stringify(o));
@@ -816,18 +830,19 @@ function esc(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&l
 function optionList(list){ return list.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join(""); }
 function fmtDelta(d){ return d > 0 ? `+${d}` : d < 0 ? `−${Math.abs(d)}` : "No change"; }
 
-let p, isExample;
+// start is "blank" or "example" until the visitor changes an answer, then null; only the visitor's own answers are saved
+let p, start;
 (function load(){
   let saved = null;
   try {
     const raw = localStorage.getItem(KEY) || localStorage.getItem("crs-points-calculator:v2");
     if (raw) saved = JSON.parse(raw);
   } catch (e) { saved = null; }
-  if (saved && saved.p){ p = merge(EXAMPLE, saved.p); isExample = false; }
-  else { p = clone(EXAMPLE); isExample = true; }
+  if (saved && saved.p){ p = merge(BLANK, saved.p); start = null; }
+  else { p = clone(BLANK); start = "blank"; }
 })();
 function save(){ try { localStorage.setItem(KEY, JSON.stringify({v:1, p})); } catch (e) {} }
-if (!isExample) save();
+if (!start) save();
 try { localStorage.removeItem("crs-points-calculator:v2"); localStorage.removeItem("crs-points-calculator:remember"); } catch (e) {}
 
 function testOptions(keys, noneLabel){
@@ -838,20 +853,20 @@ function testOptions(keys, noneLabel){
   return html;
 }
 function buildStaticOptions(){
-  const ages = [[17, "17 or younger"]];
+  const ages = [[0, "Select your age"], [17, "17 or younger"]];
   for (let a = 18; a <= 44; a++) ages.push([a, String(a)]);
   ages.push([45, "45 or older"]);
   $("#age").innerHTML = optionList(ages);
   const eduList = Object.keys(EDU).map(k => [k, EDU[k].label]);
-  $("#edu").innerHTML = optionList(eduList);
-  $("#sp-edu").innerHTML = optionList(eduList);
+  $("#edu").innerHTML = optionList([["", "Select your education"]].concat(eduList));
+  $("#sp-edu").innerHTML = optionList([["", "Select their education"]].concat(eduList));
   $("#canExp").innerHTML = optionList(CAN_LABELS.map((l, i) => [i, l]));
   $("#sp-canExp").innerHTML = optionList(CAN_LABELS.map((l, i) => [i, l]));
   $("#forExp").innerHTML = optionList(FOR_LABELS.map((l, i) => [i, l]));
   $("#hw").innerHTML = optionList(HW_OPTS);
   $("#job").innerHTML = optionList(JOB_OPTS);
   $("#canEdu").innerHTML = optionList(CANEDU_OPTS);
-  $("#l1-test").innerHTML = testOptions(EN_TESTS.concat(FR_TESTS), "");
+  $("#l1-test").innerHTML = testOptions(EN_TESTS.concat(FR_TESTS), "Select your test");
   $("#sp-test").innerHTML = testOptions(EN_TESTS.concat(FR_TESTS), "No test");
 }
 function buildSecondOptions(){
@@ -907,8 +922,9 @@ function updateChips(base, info){
     if (t.kind === "level"){ chip.hidden = true; return; }
     const lv = info.levels[i];
     chip.hidden = false;
-    chip.classList.toggle("miss", lv == null);
-    chip.textContent = lv == null ? (l[s] === "" ? "Not entered" : "Check this score") : lv >= 10 ? `${pre} 10+` : lv >= 4 ? `${pre} ${lv}` : `Below ${pre} 4`;
+    chip.classList.toggle("miss", lv == null && l[s] === "");
+    chip.classList.toggle("bad", lv == null && l[s] !== "");
+    chip.textContent = lv == null ? (l[s] === "" ? "Not entered" : t.range ? `Enter ${t.range[s][0]}–${t.range[s][1]}` : "Check this score") : lv >= 10 ? `${pre} 10+` : lv >= 4 ? `${pre} ${lv}` : `Below ${pre} 4`;
   });
 }
 function setApplied(kind){
@@ -957,7 +973,16 @@ function renderResults(r){
 
   const s = $("#summary");
   let msg, note = false;
-  if (!r.l1.complete){ msg = "Enter all four scores for your first official language. Missing scores count as zero."; note = true; }
+  const missing = [];
+  if (!p.age) missing.push("age");
+  if (!EDU[p.edu]) missing.push("education");
+  if (!r.l1.complete) missing.push("all four first-language test scores");
+  if (r.withSp && !EDU[p.sp.edu]) missing.push("your partner's education");
+  if (missing.length){
+    const list = missing.length > 1 ? `${missing.slice(0, -1).join(", ")} and ${missing[missing.length - 1]}` : missing[0];
+    msg = `Still to answer: ${list}. Missing answers count as zero.`;
+    note = true;
+  }
   else if (r.delta > 0) msg = r.lmi.path === "job"
     ? (r.lmi.workPath > 0 ? `Your job offer adds ${r.delta} points from November 3. It replaces your Canadian work points in the new factor.` : `Your job offer adds ${r.delta} points from November 3.`)
     : `Your high-wage work experience adds ${r.delta} points from November 3.`;
@@ -972,12 +997,30 @@ function update(){
   updateChips("l1", r.l1);
   updateChips("l2", r.l2);
   if (r.withSp) updateChips("sp.lang", r.sp.l);
+  $("#hw-field").hidden = p.canExp < 1;
   $("#hw-warn").hidden = !r.lmi.hwBlocked;
   setApplied("hw");
   setApplied("job");
   renderResults(r);
 }
-function edited(){ if (isExample){ isExample = false; $("#banner").hidden = true; } }
+function edited(){ if (start){ start = null; $("#banner").hidden = true; } }
+function drawBanner(){
+  $("#banner").hidden = !start;
+  if (!start) return;
+  $("#banner-msg").innerHTML = start === "example"
+    ? "<b>Example profile.</b> These are sample answers, not yours."
+    : "<b>Start here.</b> Answer each question and your score updates as you go.";
+  $("#banner-btn").textContent = start === "example" ? "Clear and enter mine" : "Show an example";
+}
+$("#banner-btn").addEventListener("click", () => {
+  start = start === "example" ? "blank" : "example";
+  p = clone(start === "example" ? EXAMPLE : BLANK);
+  init();
+});
+function scrollToEl(el){
+  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  el.scrollIntoView({behavior: reduce ? "auto" : "smooth", block: "start"});
+}
 
 const form = $("#f");
 form.addEventListener("submit", e => e.preventDefault());
@@ -1059,7 +1102,8 @@ function drawHits(kind){
   });
 });
 
-function ageLabel(a){ return a <= 17 ? "17 or younger" : a >= 45 ? "45 or older" : String(a); }
+function ageLabel(a){ return !a ? "not entered" : a <= 17 ? "17 or younger" : a >= 45 ? "45 or older" : String(a); }
+function eduLabel(k){ return EDU[k] ? EDU[k].label : "Education not entered"; }
 function langLine(l, info){
   if (!l || !TESTS[l.test] || !info) return "none";
   const t = TESTS[l.test];
@@ -1074,7 +1118,7 @@ function summaryText(){
   const lines = [
     "CRS estimate (unofficial)",
     `Today: ${r.today} | From Nov 3, 2026: ${r.nov} (${fmtDelta(r.delta)})`,
-    `${p.spouse ? "Partner coming" : "No partner counted"} | Age ${ageLabel(p.age)} | ${EDU[p.edu].label}`,
+    `${p.spouse ? "Partner coming" : "No partner counted"} | Age ${ageLabel(p.age)} | ${eduLabel(p.edu)}`,
     `First language: ${langLine(p.l1, r.l1)}`
   ];
   if (TESTS[p.l2.test]) lines.push(`Second language: ${langLine(p.l2, r.l2)}`);
@@ -1086,7 +1130,7 @@ function summaryText(){
   if (p.sibling) extras.push("sibling in Canada");
   if (p.canEdu !== "none") extras.push(p.canEdu === "long" ? "Canadian 3+ year credential" : "Canadian 1-2 year credential");
   lines.push(`Extras: ${extras.length ? extras.join(", ") : "none"}`);
-  if (p.spouse) lines.push(`Partner: ${EDU[p.sp.edu].label} | language ${langLine(p.sp.lang, r.sp.l)} | Canadian work ${CAN_LABELS[p.sp.canExp]}`);
+  if (p.spouse) lines.push(`Partner: ${eduLabel(p.sp.edu)} | language ${langLine(p.sp.lang, r.sp.l)} | Canadian work ${CAN_LABELS[p.sp.canExp]}`);
   lines.push(`Breakdown (today / Nov 3): age ${r.core.age}, education ${r.core.edu}, languages ${r.core.lang1 + r.core.lang2}, Canadian work ${r.core.can} / new factor ${r.lmi.value}, partner ${r.sp.total}, transferability ${r.skills.total}, additional ${r.add.total}`);
   return lines.join("\n");
 }
@@ -1100,17 +1144,16 @@ $("#copy").addEventListener("click", () => {
   } catch (e) { fallback(); }
 });
 $("#reset").addEventListener("click", () => {
-  p = clone(EXAMPLE);
-  isExample = true;
+  if (!start && !confirm("Clear all your answers? This can't be undone.")) return;
+  p = clone(BLANK);
+  start = "blank";
   try { localStorage.removeItem(KEY); } catch (e) {}
   init();
   $("#copy-text").hidden = true;
-  $("#status").textContent = "Example profile restored.";
+  $("#status").textContent = "Answers cleared.";
+  scrollToEl($("#banner"));
 });
-$("#go").addEventListener("click", () => {
-  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  $("#results").scrollIntoView({behavior: reduce ? "auto" : "smooth", block: "start"});
-});
+$("#go").addEventListener("click", () => scrollToEl($("#results")));
 
 function init(){
   buildSecondOptions();
@@ -1119,7 +1162,7 @@ function init(){
   renderCells("l2");
   renderCells("sp.lang");
   $("#partner").hidden = !p.spouse;
-  $("#banner").hidden = !isExample;
+  drawBanner();
   ["hw", "job"].forEach(k => { $(`#${k}-q`).value = ""; drawHits(k); });
   update();
 }

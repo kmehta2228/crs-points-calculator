@@ -21,6 +21,7 @@ Edit `site/index.html` and push to `main`. The live site updates in about a minu
 
 - CRS point values are in the `SCORING` section of the script.
 - The high-wage occupations list is in `NOC_RAW`, one `tier|NOC code|title` line per occupation.
+- New visitors start from the empty answers in `BLANK`. The sample answers behind "Show an example" are in `EXAMPLE`.
 - The Google Analytics measurement ID is in the `gtag` snippet at the top of `<head>`. The same snippet lists the regions where analytics cookies stay off until the visitor clicks Allow (EU/EEA, UK, Switzerland, Quebec); everywhere else they're on until the visitor clicks Decline. The banner itself is at the end of `<body>`.
 
 The first run of the watch workflow saves a baseline and opens no issue. GitHub pauses scheduled workflows in public repositories after 60 days without any repository activity; if that happens, re-enable it from the Actions tab.
