@@ -10,5 +10,9 @@
   "2026 changes to CRS points": {
     "url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/changes.html",
     "sha256": "dea79227bb5fdca1be1614825a392724ab30321a8f84c90b9f609d503f860a02"
+  },
+  "Express Entry language test results": {
+    "url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/documents/language-test.html",
+    "sha256": "016f1b241665a22a463fd545b4c1df93cb270c5957227c2d291858d05d95f5c6"
   }
 }
