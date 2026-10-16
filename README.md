@@ -4,6 +4,8 @@ Estimate your Express Entry CRS score under today's rules and under the rules th
 
 **Unofficial estimate. Not affiliated with IRCC or the Government of Canada.**
 
+**Live site:** https://kmehta2228.github.io/crs-points-calculator/
+
 ## What's here
 
 | Path | What it does |
