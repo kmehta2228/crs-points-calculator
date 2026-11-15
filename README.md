@@ -1,6 +1,6 @@
 # CRS Points Calculator
 
-Estimate your Express Entry CRS score under today's rules and under the rules that start November 3, 2026, when Canadian work in high-wage occupations and job offers earn new points.
+Estimate your Express Entry CRS score under the rules in force since November 3, 2026, when the Labour Market Integration factor replaced points for Canadian work experience and Canadian work in high-wage occupations and job offers started earning new points.
 
 **Unofficial estimate. Not affiliated with IRCC or the Government of Canada.**
 
@@ -24,7 +24,7 @@ Estimate your Express Entry CRS score under today's rules and under the rules th
 
 Edit `site/index.html` and push to `main`. The live site updates in about a minute.
 
-- CRS point values are in the `SCORING` section of the script.
+- CRS point values are in the `SCORING` section of the script. `scoreProfile()` returns `score` (the current rules) and `old` (the pre-November-3 rules), which is used only to place the visitor in IRCC's pool figures until IRCC publishes a pool rescored under the new rules.
 - The high-wage occupations list is in `NOC_RAW`, one `tier|NOC code|title` line per occupation.
 - New visitors start from the empty answers in `BLANK`. The sample answers behind "Show an example" are in `EXAMPLE`.
 - The Google Analytics measurement ID is in the `gtag` snippet at the top of `<head>`. The same snippet lists the regions where analytics cookies stay off until the visitor clicks Allow (EU/EEA, UK, Switzerland, Quebec); everywhere else they're on until the visitor clicks Decline. The banner itself is at the end of `<body>`.
@@ -33,7 +33,7 @@ The first run of the watch workflow saves a baseline and opens no issue. GitHub 
 
 ## Next draw estimates (for maintainers)
 
-For each draw type (CEC, French, healthcare, PNP and so on) and each number of invitations, the site estimates the lowest score that would get an invitation in the next draw, with a range that held the real cut-off about 8 times in 10 when tested on past draws. Each estimate is the median of three models: a queue model per draw type, a model of IRCC's published pool score distribution, and a regression on past cut-offs. Estimates for draws after November 3, 2026 add a scenario for the new points. They are estimates, not IRCC numbers.
+For each draw type (CEC, French, healthcare, PNP and so on) and each number of invitations, the site estimates the lowest score that would get an invitation in the next draw, with a range that held the real cut-off about 8 times in 10 when tested on past draws. Each estimate is the median of three models: a queue model per draw type, a model of IRCC's published pool score distribution, and a regression on past cut-offs. Every estimate is for the rules in force since November 3, 2026. Until IRCC has held a few draws under those rules, the estimates add a reasoned shift for the new points (`NOV3_DELTA`), which fades out as new-rules draws arrive. They are estimates, not IRCC numbers.
 
 **Data.** Everything comes from IRCC's [rounds of invitations file](https://www.canada.ca/content/dam/ircc/documents/json/ee_rounds_123_en.json), the one behind its [rounds page](https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/rounds-invitations.html). Statistics Canada does not publish Express Entry draw data.
 
@@ -52,7 +52,7 @@ The file only changes when IRCC's data or the code does. After changing `build_p
 
 - When the 2027-2029 Immigration Levels Plan is published (due fall 2026), and each January, update `QUOTA_FACTS` in `build_predictions.py` and bump `MODEL_VERSION`.
 - The files in `crs_engine/` must stay byte-identical to the versions that were tested; their SHA-256 hashes are published in `draws.json`. Change them only after re-running the backtest with `python3 -I .github/scripts/crs_engine/harness.py .github/scripts/crs_engine/approach_*.py --data ee_rounds_123_en.json --no-write`.
-- Review the first draw cycle after November 3, 2026 by hand. The after-November-3 shifts (`NOV3_DELTA` in `build_predictions.py`) are a reasoned scenario, not fitted to data.
+- Review the first draw cycle under the new rules by hand. The shifts for the new points (`NOV3_DELTA` in `build_predictions.py`) are a reasoned scenario, not fitted to data.
 - If IRCC changes its rounds page or score bands, update `BAND_LABELS` in `update_draws.py` and the models (re-tested) before publishing again.
 
 ## Sources
