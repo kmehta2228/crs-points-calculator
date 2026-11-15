@@ -52,7 +52,7 @@ sys.modules["harness"] = harness
 _HARNESS_SPEC.loader.exec_module(harness)
 
 SCHEMA_VERSION = 1
-MODEL_VERSION = "2026-10-16.1"
+MODEL_VERSION = "2026-11-15.1"
 SOURCE_URL = "https://www.canada.ca/content/dam/ircc/documents/json/ee_rounds_123_en.json"
 ROUND_URL = ("https://www.canada.ca/en/immigration-refugees-citizenship/corporate/mandate/"
              "policies-operational-instructions-agreements/ministerial-instructions/"
@@ -774,23 +774,20 @@ def build(raw_bytes, previous=None):
     for r in bt_rows:
         bt_by_type.setdefault(r["type"], []).append(r)
 
-    # 3. scenarios. "current": each type's next slot (one simulated cycle per cycle start).
-    #    "after_nov3" (only while no post-change draw exists): the first cycle after the pause,
-    #    assuming the pre-change cycle before it (if any) happens as expected.
+    # 3. one scenario per type, "current", always under the new rules: the old rules ended on
+    #    CHANGE_DATE, so no draw under them can still happen. Until IRCC holds its first draw
+    #    under the new rules (pre), every type's next draw is in the first cycle after the pause,
+    #    simulated from the published rounds alone: no draw was held between the last published
+    #    round and CHANGE_DATE, so no pre-change placeholder draws are assumed.
     pre = not cal["post_regime"]
+    if pre:
+        for t in ui_types:
+            slot[t] = (cal["after_pause_start"] + _offset(t), cal["after_pause_start"])
     sims = {}
     for t in ui_types:
-        d, s = slot[t]
-        if s not in sims and (not pre or d < CHANGE_DATE):
-            sims[s] = CycleSim(rounds, s, default_n, True, until=CHANGE_DATE if pre else None)
-    after_sim, base_added = None, []
-    if pre:
-        base_after = rounds
-        for s in sorted({s for d, s in slot.values() if d < CHANGE_DATE}):
-            sim = CycleSim(base_after, s, default_n, True, until=CHANGE_DATE)
-            base_after = sim.history_for(None)
-            base_added += sim.added
-        after_sim = CycleSim(base_after, cal["after_pause_start"], default_n, True)
+        s = slot[t][1]
+        if s not in sims:
+            sims[s] = CycleSim(rounds, s, default_n, True)
     next_start = min(s for _d, s in slot.values())
 
     types_out = []
@@ -804,44 +801,18 @@ def build(raw_bytes, previous=None):
         hypothetical = t == "general" and not recent
         conf = _confidence(bt, hypothetical)
         date, start = slot[t]
-        cur_applies = date < CHANGE_DATE
-        scen, order = {}, []
-        if pre:
-            if cur_applies:
-                g, _w, fails = predict_grid(sims[start].history_for(t), date, t, grid)
-                scen["current"] = {
-                    "label": "Current rules", "rules": "before_nov3", "applies": True,
-                    "expected_date": date.isoformat(),
-                    "window": [start.isoformat(), (start + dt.timedelta(days=4)).isoformat()],
-                    "confidence": conf, "shift_weight": 0.0, "grid": g, "member_failures": fails}
-            adate = cal["after_pause_start"] + _offset(t)
-            ah = after_sim.history_for(t)
-            if not cur_applies:   # no draw expected before Nov 3: old rules for comparison only
-                g, _w, fails = predict_grid(ah, adate, t, grid, apply_change=False)
-                scen["current"] = {
-                    "label": "Old rules (comparison only)", "rules": "before_nov3", "applies": False,
-                    "expected_date": adate.isoformat(), "window": None,
-                    "confidence": conf, "shift_weight": 0.0, "grid": g, "member_failures": fails}
-            g2, w2, fails2 = predict_grid(ah, adate, t, grid)
-            scen["after_nov3"] = {
-                "label": "After the Nov 3 change", "rules": "after_nov3", "applies": True,
-                "expected_date": adate.isoformat(),
-                "window": [d.isoformat() for d in cal["after_pause_window"]],
-                "confidence": _DOWN[conf], "shift_weight": round(w2, 2),
-                "grid": g2, "member_failures": fails2}
-            order = ["current", "after_nov3"]
-            default_scen = "current" if cur_applies else "after_nov3"
-        else:
-            g, w, fails = predict_grid(sims[start].history_for(t), date, t, grid)
-            k_post = post_change_count(rounds, t)
-            scen["current"] = {
-                "label": "New rules (from Nov 3, 2026)", "rules": "after_nov3", "applies": True,
-                "expected_date": date.isoformat(),
-                "window": [start.isoformat(), (start + dt.timedelta(days=4)).isoformat()],
-                "confidence": conf if (k_post >= NOV3_RECAL_DRAWS or t == "general") else _DOWN[conf],
-                "shift_weight": round(w, 2), "post_change_draws": k_post,
-                "grid": g, "member_failures": fails}
-            order, default_scen = ["current"], "current"
+        g, w, fails = predict_grid(sims[start].history_for(t), date, t, grid)
+        k_post = post_change_count(rounds, t)
+        recal = k_post >= NOV3_RECAL_DRAWS or (t == "general" and not pre)
+        scen = {"current": {
+            "label": "New rules (from Nov 3, 2026)", "rules": "after_nov3", "applies": True,
+            "expected_date": date.isoformat(),
+            "window": [d.isoformat() for d in cal["after_pause_window"]] if pre
+            else [start.isoformat(), (start + dt.timedelta(days=4)).isoformat()],
+            "confidence": conf if recal else _DOWN[conf],
+            "shift_weight": round(w, 2), "post_change_draws": k_post,
+            "grid": g, "member_failures": fails}}
+        order, default_scen = ["current"], "current"
         note = info["note"]
         if t == "general":
             note = ("IRCC has not held an all-program draw since %s. This shows what the cut-off would be "
@@ -863,8 +834,6 @@ def build(raw_bytes, previous=None):
     snap = base_ctx["snapshot"]
     latest_r = rounds[-1]
     assumed = {"current": [a for s in sorted(sims) for a in sims[s].added]}
-    if after_sim is not None:
-        assumed["after_nov3"] = base_added + after_sim.added
     return {
         "schema": SCHEMA_VERSION,
         "model_version": MODEL_VERSION,
@@ -893,7 +862,7 @@ def build(raw_bytes, previous=None):
             "last_cycle_start": cal["last_start"].isoformat(), "typical_cycle_days": cal["gap"],
             "next_cycle_start": next_start.isoformat(),
             "change": {"date": CHANGE_DATE.isoformat(), "pause_max_days": PAUSE_MAX_DAYS,
-                       "status": "in_effect" if cal["post_regime"] else "upcoming",
+                       "status": "in_effect",
                        "first_cycle_after_pause": cal["after_pause_start"].isoformat(),
                        "after_pause_window": [d.isoformat() for d in cal["after_pause_window"]],
                        "sources": CHANGE_SOURCES},

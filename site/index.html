@@ -22,7 +22,7 @@ gtag('js', new Date());
 gtag('config', 'G-4BSPZQS1T9');
 </script>
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}img{max-width:100%}</style>
-<title>CRS Calculator Oct 2026 updated (new rules)</title>
+<title>CRS Calculator Nov 2026 updated (new rules)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@500;600&display=swap">
@@ -156,16 +156,13 @@ details.lookup summary{cursor:pointer;padding:10px 0;font-weight:700;font-size:1
 .results{min-width:0;scroll-margin-top:calc(76px + env(safe-area-inset-top,0px))}
 .panel{background:var(--surface);border:1px solid var(--rule);border-radius:16px;box-shadow:var(--shadow);padding:18px;display:grid;gap:16px;min-width:0}
 .panel h2{font-family:var(--f-display);font-weight:600;font-size:22px;margin:0}
-.totals{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.totals{display:grid;grid-template-columns:1fr;gap:12px}
 .total{display:grid;gap:3px;align-content:start;padding:12px 14px;border-radius:12px;min-width:0}
 .total .k{font-family:var(--f-mono);font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
 .total .v{font-family:var(--f-display);font-weight:700;font-size:46px;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .total .s{font-size:13px;color:var(--muted)}
-.total.today{background:var(--bg)}
 .stamp{border:3px double var(--accent);color:var(--accent);transform:rotate(-1.2deg)}
 .stamp .k{color:var(--accent)}
-.delta{justify-self:start;font-family:var(--f-mono);font-size:13px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--gain-soft);color:var(--gain);font-variant-numeric:tabular-nums;white-space:nowrap}
-.delta.zero{background:var(--bg);color:var(--muted)}
 .summary{margin:0;font-size:15.5px}
 .summary.note{color:var(--note);font-weight:700}
 
@@ -207,10 +204,9 @@ table.bd{width:100%;border-collapse:collapse;font-size:14.5px}
 .dock .k{font-family:var(--f-mono);font-size:10.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
 .dock .v{font-family:var(--f-display);font-weight:700;font-size:26px;font-variant-numeric:tabular-nums}
 .dock .nov .k,.dock .nov .v{color:var(--accent)}
-.dock .arrow{color:var(--muted);font-size:18px}
 .dock .go{margin-left:auto;font:inherit;font-weight:700;font-size:14px;background:transparent;border:1px solid var(--rule);color:var(--ink);border-radius:999px;padding:8px 12px;cursor:pointer;white-space:nowrap}
 
-@media (max-width:370px){.dock .arrow{display:none}.dock .v{font-size:23px}}
+@media (max-width:370px){.dock .v{font-size:23px}}
 @media (min-width:960px){
   .wrap-top{padding-block:32px 0}
   .wrap-main{padding-block:8px 56px}
@@ -410,18 +406,15 @@ table.bd{width:100%;border-collapse:collapse;font-size:14.5px}
 <div class="wrap wrap-top">
   <header class="top">
     <p class="eyebrow">Express Entry · Comprehensive Ranking System</p>
-    <h1>CRS Calculator Oct 2026 updated (new rules)</h1>
-    <p class="lede">Compare your score under today's rules with your score from November 3, 2026, when work in high-wage occupations and job offers start earning new points.</p>
+    <h1>CRS Calculator Nov 2026 updated (new rules)</h1>
+    <p class="lede">Estimate your score under the CRS rules in force since November 3, 2026, including the new Labour Market Integration points for Canadian work in high-wage occupations and for job offers.</p>
     <p class="disclaimer">Unofficial estimate. Not affiliated with IRCC or the Government of Canada.</p>
   </header>
 </div>
 
 <div class="dock" id="dock">
   <div class="dock-in">
-    <div class="d"><span class="k">Today</span><span class="v" id="d-today">0</span></div>
-    <span class="arrow" aria-hidden="true">→</span>
-    <div class="d nov"><span class="k">From Nov 3</span><span class="v" id="d-nov">0</span></div>
-    <span class="delta" id="d-delta"></span>
+    <div class="d nov"><span class="k">Your CRS score</span><span class="v" id="d-score">0</span></div>
     <button type="button" class="go" id="go">Breakdown</button>
   </div>
 </div>
@@ -489,7 +482,7 @@ table.bd{width:100%;border-collapse:collapse;font-size:14.5px}
           <div class="select"><select id="hw" data-path="hw"></select></div>
           <p class="applied" id="hw-applied" hidden></p>
           <p class="warn" id="hw-warn" hidden>High-wage points need at least 1 year of skilled work in Canada.</p>
-          <p class="help">New from November 3. Pick the highest tier where you have 12 months combined. Months in a higher tier also count toward a lower one.</p>
+          <p class="help">Pick the highest tier where you have 12 months combined. Months in a higher tier also count toward a lower one.</p>
           <details class="lookup" id="hw-lookup">
             <summary>Not sure? Search your occupation</summary>
             <label class="sr" for="hw-q">Job title or NOC code</label>
@@ -514,7 +507,7 @@ table.bd{width:100%;border-collapse:collapse;font-size:14.5px}
           <label for="job">Valid job offer</label>
           <div class="select"><select id="job" data-path="job"></select></div>
           <p class="applied" id="job-applied" hidden></p>
-          <p class="help">Today, job offers earn no CRS points. From November 3, an offer in a high-wage occupation earns 50 to 100 points, and no LMIA is needed.</p>
+          <p class="help">An offer in a high-wage occupation earns 50 to 100 points, and no LMIA is needed. Offers in other occupations earn no points.</p>
           <details class="lookup" id="job-lookup">
             <summary>Not sure? Search the job's occupation</summary>
             <label class="sr" for="job-q">Job title or NOC code</label>
@@ -575,16 +568,15 @@ table.bd{width:100%;border-collapse:collapse;font-size:14.5px}
       <div class="panel">
         <h2 id="h-results">Your estimate</h2>
         <div class="totals">
-          <div class="total today"><span class="k">Today</span><span class="v" id="t-today">0</span><span class="s">Current rules</span></div>
-          <div class="total stamp"><span class="k">From Nov 3</span><span class="v" id="t-nov">0</span><span class="delta" id="t-delta"></span></div>
+          <div class="total stamp"><span class="k">Your CRS score</span><span class="v" id="t-score">0</span><span class="s">Rules in force since November 3, 2026</span></div>
         </div>
         <p class="summary" id="summary"></p>
         <p class="help">How does this compare? See the lowest score invited in recent <a href="https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/rounds-invitations.html" target="_blank" rel="noopener">Express Entry rounds of invitations</a>.</p>
         <div class="tablewrap">
           <table class="bd">
-            <thead><tr><th scope="col">Factor</th><th scope="col" class="n">Today</th><th scope="col" class="n">Nov 3</th></tr></thead>
+            <thead><tr><th scope="col">Factor</th><th scope="col" class="n">Points</th></tr></thead>
             <tbody id="bd-body"></tbody>
-            <tfoot><tr><td>Total</td><td class="n" id="bd-today"></td><td class="n" id="bd-nov"></td></tr></tfoot>
+            <tfoot><tr><td>Total</td><td class="n" id="bd-score"></td></tr></tfoot>
           </table>
         </div>
         <div class="lmi" id="lmi"></div>
@@ -701,8 +693,8 @@ table.bd{width:100%;border-collapse:collapse;font-size:14.5px}
   </section>
 
   <footer class="notes">
-    <p>Unofficial estimate, not affiliated with IRCC or the Government of Canada. Built from IRCC's published CRS tables and the November 3, 2026 changes, checked October 16, 2026. The score in your Express Entry profile is the one that counts.</p>
-    <p>Invitation rounds pause for up to two weeks from November 3 while IRCC recalculates existing profiles.</p>
+    <p>Unofficial estimate, not affiliated with IRCC or the Government of Canada. Built from IRCC's published CRS tables, including the Labour Market Integration factor that replaced points for Canadian work experience on November 3, 2026. Updated November 15, 2026. The score in your Express Entry profile is the one that counts.</p>
+    <p>IRCC paused invitation rounds for up to two weeks from November 3, 2026 while it recalculated the scores in existing profiles.</p>
     <p>Your answers are saved in this browser only. The site uses Google Analytics to count visits; your answers are never sent to it. <button type="button" class="linkbtn" id="consent-open">Cookie settings</button></p>
     <ul>
       <li><a href="https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/changes.html" target="_blank" rel="noopener">2026 changes to points for Canadian work experience and job offers</a></li>
@@ -857,7 +849,8 @@ function scoreProfile(p){
   const add = {pnp:p.pnp ? 600 : 0, sibling:p.sibling ? 15 : 0, canEdu:p.canEdu === "long" ? 30 : p.canEdu === "short" ? 15 : 0, french};
   add.total = Math.min(600, add.pnp + add.sibling + add.canEdu + add.french);
 
-  // From Nov 3, 2026: Labour Market Integration = higher of (work-length + high-wage bonus) or job offer
+  // Since Nov 3, 2026, Labour Market Integration replaces the Canadian work experience factor:
+  // the higher of (Canadian work + high-wage bonus) or a high-wage job offer, never both (max 150, or 140 with a partner)
   const hwAsked = HW_BONUS[p.hw] || 0;
   const hw = canYears >= 1 ? hwAsked : 0;
   const job = JOB_PTS[p.job] || 0;
@@ -865,9 +858,9 @@ function scoreProfile(p){
   const lmi = {can, hw, workPath, job, value:Math.max(workPath, job), path:job > workPath ? "job" : "work", hwBlocked:canYears < 1 && hwAsked > 0};
 
   const shared = age + edu + lang1 + lang2 + sp.total + skills.total + add.total;
-  const today = shared + can;
-  const nov = shared + lmi.value;
-  return {withSp, l1, l2, core:{age, edu, lang1, lang2, can}, sp, skills, add, lmi, today, nov, delta:nov - today};
+  // old: the score under the rules before Nov 3, used only to place the visitor in IRCC's pool figures
+  // until IRCC publishes a pool rescored under the new rules
+  return {withSp, l1, l2, core:{age, edu, lang1, lang2}, sp, skills, add, lmi, score:shared + lmi.value, old:shared + can};
 }
 // ===== SCORING END =====
 
@@ -1114,7 +1107,6 @@ function setPath(o, path, val){
 }
 function esc(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 function optionList(list){ return list.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join(""); }
-function fmtDelta(d){ return d > 0 ? `+${d}` : d < 0 ? `−${Math.abs(d)}` : "No change"; }
 
 // start is "blank" or "example" until the visitor changes an answer, then null; only the visitor's own answers are saved
 let p, start;
@@ -1229,38 +1221,32 @@ function missingAnswers(r){
   return missing;
 }
 function renderResults(r){
-  $("#t-today").textContent = r.today;
-  $("#t-nov").textContent = r.nov;
-  $("#d-today").textContent = r.today;
-  $("#d-nov").textContent = r.nov;
-  ["#t-delta", "#d-delta"].forEach(s => { const el = $(s); el.textContent = fmtDelta(r.delta); el.classList.toggle("zero", r.delta === 0); });
+  $("#t-score").textContent = r.score;
+  $("#d-score").textContent = r.score;
 
-  const dash = '<span class="dash">–</span>';
-  const row = (label, a, b, sub) => `<tr><td>${label}${sub ? `<small>${sub}</small>` : ""}</td><td class="n">${a == null ? dash : a}</td><td class="n">${b == null ? dash : b}</td></tr>`;
+  const row = (label, a, sub) => `<tr><td>${label}${sub ? `<small>${sub}</small>` : ""}</td><td class="n">${a}</td></tr>`;
   const rows = [
-    row("Age", r.core.age, r.core.age),
-    row("Education", r.core.edu, r.core.edu),
-    row("First official language", r.core.lang1, r.core.lang1),
-    row("Second official language", r.core.lang2, r.core.lang2),
-    row("Canadian work experience", r.core.can, null, "From Nov 3 it counts inside the new factor"),
-    row("Labour Market Integration", null, r.lmi.value, r.lmi.path === "job" ? "New factor, using your job offer" : r.lmi.hw ? `New factor: work ${r.lmi.can} + high-wage ${r.lmi.hw}` : "New factor, using your Canadian work")
+    row("Age", r.core.age),
+    row("Education", r.core.edu),
+    row("First official language", r.core.lang1),
+    row("Second official language", r.core.lang2),
+    row("Labour Market Integration", r.lmi.value, r.lmi.path === "job" ? "Using your job offer" : r.lmi.hw ? `Canadian work ${r.lmi.can} + high-wage ${r.lmi.hw}` : "Canadian work experience")
   ];
-  if (r.withSp) rows.push(row("Partner factors", r.sp.total, r.sp.total, `Education ${r.sp.edu}, language ${r.sp.lang}, Canadian work ${r.sp.can}`));
-  rows.push(row("Skill transferability", r.skills.total, r.skills.total, `Education ${r.skills.edu}, foreign work ${r.skills.foreign}${r.skills.coq ? `, trade certificate ${r.skills.coq}` : ""}`));
+  if (r.withSp) rows.push(row("Partner factors", r.sp.total, `Education ${r.sp.edu}, language ${r.sp.lang}, Canadian work ${r.sp.can}`));
+  rows.push(row("Skill transferability", r.skills.total, `Education ${r.skills.edu}, foreign work ${r.skills.foreign}${r.skills.coq ? `, trade certificate ${r.skills.coq}` : ""}`));
   const extras = [];
   if (r.add.pnp) extras.push(`Nomination ${r.add.pnp}`);
   if (r.add.french) extras.push(`French ${r.add.french}`);
   if (r.add.canEdu) extras.push(`Canadian study ${r.add.canEdu}`);
   if (r.add.sibling) extras.push(`Sibling ${r.add.sibling}`);
-  rows.push(row("Additional points", r.add.total, r.add.total, extras.join(", ")));
+  rows.push(row("Additional points", r.add.total, extras.join(", ")));
   $("#bd-body").innerHTML = rows.join("");
-  $("#bd-today").textContent = r.today;
-  $("#bd-nov").textContent = r.nov;
+  $("#bd-score").textContent = r.score;
 
   const workUsed = r.lmi.path === "work";
   const tag = '<span class="tag">Counts</span>';
   $("#lmi").innerHTML =
-    `<h3>How the new factor scores you</h3>` +
+    `<h3>How Labour Market Integration scores you</h3>` +
     `<div class="opt${workUsed ? " used" : ""}"><span>Canadian work${r.lmi.hw ? " + high-wage bonus" : ""}${workUsed ? tag : ""}</span><span class="n">${r.lmi.hw ? `${r.lmi.can} + ${r.lmi.hw} = ${r.lmi.workPath}` : r.lmi.workPath}</span></div>` +
     `<div class="opt${workUsed ? "" : " used"}"><span>Job offer${workUsed ? "" : tag}</span><span class="n">${r.lmi.job}</span></div>` +
     `<p class="help">You get whichever is higher, not both.</p>`;
@@ -1273,11 +1259,12 @@ function renderResults(r){
     msg = `Still to answer: ${list}. Missing answers count as zero.`;
     note = true;
   }
-  else if (r.delta > 0) msg = r.lmi.path === "job"
-    ? (r.lmi.workPath > 0 ? `Your job offer adds ${r.delta} points from November 3. It replaces your Canadian work points in the new factor.` : `Your job offer adds ${r.delta} points from November 3.`)
-    : `Your high-wage work experience adds ${r.delta} points from November 3.`;
+  else if (r.lmi.path === "job") msg = r.lmi.workPath > 0
+    ? `Your job offer earns ${r.lmi.job} points for Labour Market Integration. That counts instead of your ${r.lmi.workPath} points for Canadian work, not on top of them.`
+    : `Your job offer earns ${r.lmi.job} points for Labour Market Integration.`;
+  else if (r.lmi.hw) msg = `Your high-wage work experience adds ${r.lmi.hw} points to your ${r.lmi.can} points for Canadian work.`;
   else if (r.lmi.hwBlocked){ msg = "High-wage points need at least 1 year of skilled work in Canada."; note = true; }
-  else msg = "Your score stays the same on November 3. New points go only to work or job offers in high-wage occupations.";
+  else msg = "Canadian work or a job offer in a high-wage occupation would earn extra points. Search your occupation above to check.";
   s.textContent = msg;
   s.classList.toggle("note", note);
 }
@@ -1295,9 +1282,10 @@ function update(){
   shareScore(r);
 }
 // The next-draw section below reads the visitor's scores from here, and what the answers say about CEC and French
-// draw eligibility (1+ year of skilled work in Canada; NCLC 7+ in all four French abilities, which is what earns the French bonus)
+// draw eligibility (1+ year of skilled work in Canada; NCLC 7+ in all four French abilities, which is what earns the French bonus).
+// old is the score under the pre-Nov-3 rules, for comparisons with IRCC data that is still on that scale.
 function shareScore(r){
-  window.crsScore = {today:r.today, nov:r.nov, complete:missingAnswers(r).length === 0, pnp:!!p.pnp, cecEligible:p.canExp >= 1, frenchEligible:r.add.french > 0};
+  window.crsScore = {score:r.score, old:r.old, complete:missingAnswers(r).length === 0, pnp:!!p.pnp, cecEligible:p.canExp >= 1, frenchEligible:r.add.french > 0};
   try { document.dispatchEvent(new CustomEvent("crs:score", {detail:window.crsScore})); } catch (e) {}
 }
 function edited(){ if (start){ start = null; $("#banner").hidden = true; } }
@@ -1413,8 +1401,7 @@ function summaryText(){
   const r = scoreProfile(p);
   const hwT = TIER[p.hw], jobT = TIER[p.job];
   const lines = [
-    "CRS estimate (unofficial)",
-    `Today: ${r.today} | From Nov 3, 2026: ${r.nov} (${fmtDelta(r.delta)})`,
+    `CRS estimate (unofficial, rules in force since Nov 3, 2026): ${r.score}`,
     `${p.spouse ? "Partner coming" : "No partner counted"} | Age ${ageLabel(p.age)} | ${eduLabel(p.edu)}`,
     `First language: ${langLine(p.l1, r.l1)}`
   ];
@@ -1428,7 +1415,7 @@ function summaryText(){
   if (p.canEdu !== "none") extras.push(p.canEdu === "long" ? "Canadian 3+ year credential" : "Canadian 1-2 year credential");
   lines.push(`Extras: ${extras.length ? extras.join(", ") : "none"}`);
   if (p.spouse) lines.push(`Partner: ${eduLabel(p.sp.edu)} | language ${langLine(p.sp.lang, r.sp.l)} | Canadian work ${CAN_LABELS[p.sp.canExp]}`);
-  lines.push(`Breakdown (today / Nov 3): age ${r.core.age}, education ${r.core.edu}, languages ${r.core.lang1 + r.core.lang2}, Canadian work ${r.core.can} / new factor ${r.lmi.value}, partner ${r.sp.total}, transferability ${r.skills.total}, additional ${r.add.total}`);
+  lines.push(`Breakdown: age ${r.core.age}, education ${r.core.edu}, languages ${r.core.lang1 + r.core.lang2}, Labour Market Integration ${r.lmi.value}, partner ${r.sp.total}, transferability ${r.skills.total}, additional ${r.add.total}`);
   return lines.join("\n");
 }
 $("#copy").addEventListener("click", () => {
@@ -1599,7 +1586,10 @@ function prepTypes(list){
   const out = [];
   (Array.isArray(list) ? list : []).forEach(t => {
     if (!t || KNOWN.indexOf(t.id) < 0 || !isStr(t.label) || !t.scenarios || typeof t.scenarios !== "object") return;
-    const ok = Object.keys(t.scenarios).filter(k => t.scenarios[k] && validGrid(t.scenarios[k].grid));
+    let ok = Object.keys(t.scenarios).filter(k => t.scenarios[k] && validGrid(t.scenarios[k].grid));
+    // The old rules ended on Nov 3, 2026: once that date has passed, only new-rules estimates are shown
+    const ch = changeDate();
+    if (ch && today >= ch && ok.some(k => t.scenarios[k].rules === "after_nov3")) ok = ok.filter(k => t.scenarios[k].rules === "after_nov3");
     if (!ok.length) return;
     const keys = (Array.isArray(t.scenario_order) ? t.scenario_order : []).filter(k => ok.indexOf(k) >= 0);
     ok.forEach(k => { if (keys.indexOf(k) < 0) keys.push(k); });
@@ -1614,7 +1604,7 @@ function prepTypes(list){
 function sc(){ return cur.w.t.scenarios[cur.key]; }
 function scLabel(w, k){
   const s = w.t.scenarios[k];
-  return s && isStr(s.label) ? s.label : k === "after_nov3" ? "After the Nov 3 change" : "Current rules";
+  return s && isStr(s.label) ? s.label : s && s.rules === "after_nov3" ? "New rules" : "Old rules";
 }
 function changeDate(){ return D.timing && D.timing.change ? parseDate(D.timing.change.date) : null; }
 function changeShort(){ const d = changeDate(); return d ? dfDay.format(d) : "Nov 3"; }
@@ -1628,7 +1618,7 @@ function defaultKey(w){
 // The calculator's score that matches the scenario's rules (null until the calculator is complete)
 function scoreFor(s0){
   if (!score || !score.complete) return null;
-  const v = s0.rules === "after_nov3" ? score.nov : score.today;
+  const v = s0.rules === "after_nov3" ? score.score : score.old;
   return isNum(v) ? v : null;
 }
 // True until IRCC holds a draw under the new rules (the data's regime says so; without it, the latest draw's date decides)
@@ -1706,12 +1696,14 @@ function buildSelect(){
     sel.appendChild(og);
   });
 }
+// Shown until IRCC holds its first draw under the new rules
 function buildBanner(){
   const ch = D.timing && D.timing.change, d = changeDate();
-  if (!ch || !d || !types.some(w => w.keys.indexOf("after_nov3") >= 0)) return;
+  if (!ch || !d || !preChange()) return;
   const pause = isNum(ch.pause_max_days) ? (ch.pause_max_days === 14 ? "two weeks" : `${ch.pause_max_days} days`) : "two weeks";
   const box = $("pr-change"), msg = el("span");
-  msg.append(el("b", null, `${dfDay.format(d)} change.`), ` From ${dfLong.format(d)}, IRCC adds points for Canadian work in high-wage occupations and for qualifying job offers, and pauses draws for up to ${pause} while it recalculates scores. Cut-offs will probably rise, most for Canadian Experience Class draws. Estimates for draws after ${dfDay.format(d)} are less certain.`);
+  const L = latestDraw(), since = L ? ` The last draw was on ${dfLong.format(parseDate(L.date))}, under the old rules.` : "";
+  msg.append(el("b", null, "New rules since " + dfDay.format(d) + "."), ` Since ${dfLong.format(d)}, IRCC gives points for Canadian work in high-wage occupations and for qualifying job offers. It paused draws for up to ${pause} while it recalculated scores, and has not held a draw under the new rules yet.${since} Cut-offs will probably rise, most for Canadian Experience Class draws, so these estimates are less certain.`);
   clear(box);
   box.appendChild(msg);
   box.hidden = false;
@@ -1926,7 +1918,7 @@ function dateLine(w, s0){
 function accLine(w, scen){
   const b = w.t.backtest;
   if (!b || !isNum(b.n) || b.n < 1 || !isNum(b.mae)) return "";
-  const from = parseDate(b.from), to = parseDate(b.to), lead = scen ? "Accuracy under current rules" : "Accuracy";
+  const from = parseDate(b.from), to = parseDate(b.to), lead = scen ? "Accuracy on past draws (old rules)" : "Accuracy";
   const base = isNum(b.baseline_last_mae) ? ` Simply repeating the last cut-off was off by ${nf1.format(b.baseline_last_mae)} points.` : "";
   const draws = `${b.n} draw${b.n === 1 ? "" : "s"}`;
   if (from && to && (to - from) / DAY <= 370 && (today - to) / DAY <= 400) return `${lead}: over the past 12 months our ${w.short} estimates were off by ${nf1.format(b.mae)} points on average (${draws}).${base}`;
@@ -1965,7 +1957,7 @@ function renderYours(){
   box.hidden = !st;
   if (!st) return;
   const w = cur.w, s0 = sc(), unsure = st.elig === "unknown", cat = `if you qualify for the ${w.short} category, `;
-  const where = `${s0.rules === "after_nov3" ? `Your score from ${changeShort()}` : "Your score today"} (${nf.format(st.s)}) is ${st.pos} this range`;
+  const where = `${s0.rules === "after_nov3" ? "Your score" : "Your score under the old rules"} (${nf.format(st.s)}) is ${st.pos} this range`;
   let kind = st.pos, text;
   if (st.need){ kind = "none"; text = st.need.line || st.need.text; }
   else if (s0.applies === false) text = `${where}. Old rules, shown for comparison only.`;
@@ -1978,7 +1970,7 @@ function renderYours(){
 function renderYou(){
   const w = cur.w, t = w.t, s0 = sc(), after = s0.rules === "after_nov3", body = $("pr-you-body");
   renderYours();
-  $("pr-you-k").textContent = after ? `Your score from ${changeShort()}` : "Your score today";
+  $("pr-you-k").textContent = after ? "Your score" : "Your score under the old rules";
   clear(body);
   const st = standing();
   if (!st){
@@ -2032,7 +2024,7 @@ function legendItem(kind, text){
 }
 function renderFigText(){
   const w = cur.w, s0 = sc(), you = scoreFor(s0), scen = isScenario(s0);
-  const yourLab = s0.rules === "after_nov3" ? `Your score from ${changeShort()} (new rules)` : "Your score today";
+  const yourLab = s0.rules === "after_nov3" ? "Your score" : "Your score under the old rules";
   $("pr-curve-sub").textContent = `${w.t.label} · ${scLabel(w, cur.key)}. Tap or click the chart to set the number of invitations.`;
   const lc = $("pr-curve-leg");
   clear(lc);
@@ -2269,7 +2261,7 @@ function drawPast(f){
   if (linked) sv("line", {x1:lp.x, y1:lp.y, x2:ex, y2:ey, class:"pr-proj"}, svg);
   sv("rect", {x:ex - 4, y:ys(raw.high), width:8, height:Math.max(3, ys(raw.low) - ys(raw.high)), rx:4, class:"pr-rbar"}, svg);
   const cross = sv("line", {x1:0, x2:0, y1:m.t, y2:m.t + ph, class:"pr-cross", visibility:"hidden"}, svg);
-  const ref = refLine(svg, you, ys, yd, m, pw, ph, "start", after ? `Your score from ${changeShort()}` : "");
+  const ref = refLine(svg, you, ys, yd, m, pw, ph, "start", after ? "Your score" : "");
   pts.forEach(p => sv("circle", {cx:p.x, cy:p.y, r:4, class:"pr-dot"}, svg));
   sv("circle", {cx:ex, cy:ey, r:5, class:"pr-hollow"}, svg);
   const txt = nf.format(e.point), fits = ex + 10 + txt.length * 13 * MONO_CH <= W;
@@ -2328,7 +2320,7 @@ function bandLabel(b){ return isStr(b.band) ? b.band.replace("-", "–") : `${b.
 // The published pool is on the old scale until IRCC rescores it after the change
 function poolScore(){
   if (!score || !score.complete) return null;
-  const v = D.provenance && D.provenance.pool_rescored ? score.nov : score.today;
+  const v = D.provenance && D.provenance.pool_rescored ? score.score : score.old;
   return isNum(v) ? v : null;
 }
 function roughCount(c){ return c >= 1000 ? Math.round(c / 100) * 100 : c >= 100 ? Math.round(c / 10) * 10 : Math.round(c); }
@@ -2342,7 +2334,8 @@ function renderPoolText(){
   if (s != null && A && isNum(A.from) && Array.isArray(A.values) && A.values.length){
     const i = s - A.from, v = A.values;
     const words = i < 0 ? "Almost all of them" : i >= v.length ? `Fewer than ${nf.format(roughCount(v[v.length - 1]))}` : `About ${nf.format(roughCount(v[i]))}`;
-    cap.append(" ", el("b", null, `${words} had a score at or above yours`), ` (${s}${D.provenance && D.provenance.pool_rescored ? "" : " today"}). IRCC publishes the pool in score bands; within the 501–600 band we estimate the spread.`);
+    const rescored = D.provenance && D.provenance.pool_rescored;
+    cap.append(" ", el("b", null, `${words} had a score at or above yours`), ` (${s}${rescored ? "" : ", your score under the old rules, since these figures are from before IRCC rescored the pool"}). IRCC publishes the pool in score bands; within the 501–600 band we estimate the spread.`);
   }
   if (isNum(P.invited_since_total)) cap.append(` ${nf.format(P.invited_since_total)} people were invited after that date.`);
   if (s == null) cap.append(" Fill in the calculator above to see where you are.");
@@ -2617,7 +2610,7 @@ function buildHow(){
   }
   const lim = el("ul");
   ["IRCC decides the type, size and date of every draw and can change them at any time.",
-   "The numbers for draws after the November 3 change are a reasoned scenario, not an estimate from past draws: IRCC has not said how many candidates gain points.",
+   "Every past draw was held under the old rules. Until IRCC has held a few draws under the rules in force since November 3, 2026, the estimates add a reasoned shift for the new points, not one learned from past draws: IRCC has not said how many candidates gained points.",
    "Small categories (senior managers, physicians, transport and trades) have very few past draws, so treat their estimates as rough.",
    "PNP cut-offs depend on the lowest-scoring nominee and vary a lot from draw to draw."].forEach(s => lim.appendChild(el("li", null, s)));
   body.append(el("p", "fine", "Limits"), lim);
